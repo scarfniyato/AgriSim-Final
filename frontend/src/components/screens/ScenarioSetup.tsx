@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { SimulationConfig, SimulationApiData, CropId, LocationId, SeasonId, ScenarioId, CO2LevelId, FertilizerLevelId, MonthId } from '@/lib/types';
 import { getCropDisplayName, getCropScientificName, getCropBaseEmoji, getLocationDisplayName, getCO2DisplayName, getMonthDisplayName, cn } from '@/lib/utils';
+import { apiUrl } from '@/lib/api';
 
 const CROPS: CropId[] = ['sweet_corn', 'carrot', 'tomato'];
 const LOCATIONS: LocationId[] = ['baguio_benguet', 'malaybalay_bukidnon', 'tuguegarao_cagayan'];
@@ -57,7 +58,7 @@ export default function ScenarioSetup() {
 
     try {
       // 2) Call backend simulate API using the full config expected by routes.py.
-      const response = await fetch('/api/simulate', {
+      const response = await fetch(apiUrl('/simulate'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

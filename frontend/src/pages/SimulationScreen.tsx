@@ -13,6 +13,7 @@ import { SimulationApiData, SimulationConfig, DailySimulationResult } from "@/li
 import { getCropDisplayName, getLocationDisplayName, getCO2DisplayName, getMonthDisplayName } from "@/lib/utils";
 import { HarvestResultsScreen } from "@/components/simulation/HarvestResultsScreen";
 import { toast } from "sonner";
+import { apiUrl } from "@/lib/api";
 
 // ---------------------------------------------------------------------------
 // Helpers to derive UI state from backend DailySimulationResult
@@ -203,7 +204,7 @@ export default function SimulationScreen() {
       pesticide_schedule: pesticideSchedule,
     };
 
-    fetch('/api/simulate', {
+    fetch(apiUrl('/simulate'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -246,7 +247,7 @@ export default function SimulationScreen() {
       pesticide_schedule: updatedSchedule,
     };
 
-    fetch('/api/simulate', {
+    fetch(apiUrl('/simulate'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),

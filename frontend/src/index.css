@@ -1,0 +1,319 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap');
+
+@tailwind base;
+
+/* Visual Effect Animations */
+@keyframes water-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.5);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(100px) scale(0.3);
+  }
+}
+
+@keyframes fertilizer-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.5);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-20px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-60px) scale(0.2);
+  }
+}
+
+@keyframes pesticide-spray {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  30% {
+    opacity: 0.8;
+    transform: scale(1.5);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2);
+  }
+}
+
+@keyframes pest-fly {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  25% {
+    transform: translate(10px, -8px) rotate(5deg);
+  }
+  50% {
+    transform: translate(-5px, 5px) rotate(-3deg);
+  }
+  75% {
+    transform: translate(8px, -3px) rotate(2deg);
+  }
+}
+
+.animate-water-drop {
+  animation: water-drop 1.5s ease-out forwards;
+}
+
+.animate-fertilizer-rise {
+  animation: fertilizer-rise 1.8s ease-out forwards;
+}
+
+.animate-pesticide-spray {
+  animation: pesticide-spray 1.5s ease-out forwards;
+}
+
+.animate-pest-fly {
+  animation: pest-fly infinite ease-in-out;
+}
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* AGriSim Color Palette - Agricultural Greens & Earthy Tones */
+    --background: 120 10% 98%;
+    --foreground: 120 15% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 120 15% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 120 15% 15%;
+
+    /* Primary - Agricultural Green */
+    --primary: 122 39% 49%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - Earthy Brown */
+    --secondary: 16 25% 47%;
+    --secondary-foreground: 0 0% 100%;
+
+    /* Muted backgrounds */
+    --muted: 120 10% 94%;
+    --muted-foreground: 120 10% 40%;
+
+    /* Accent - Light Green */
+    --accent: 122 39% 92%;
+    --accent-foreground: 122 39% 25%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 120 10% 88%;
+    --input: 120 10% 88%;
+    --ring: 122 39% 49%;
+
+    --radius: 0.75rem;
+
+    /* Custom AGriSim tokens */
+    --agri-green-50: 122 39% 96%;
+    --agri-green-100: 122 39% 92%;
+    --agri-green-200: 122 39% 80%;
+    --agri-green-300: 122 39% 65%;
+    --agri-green-400: 122 39% 55%;
+    --agri-green-500: 122 39% 49%;
+    --agri-green-600: 122 39% 40%;
+    --agri-green-700: 122 39% 32%;
+
+    --earth-brown-50: 16 25% 96%;
+    --earth-brown-100: 16 25% 90%;
+    --earth-brown-200: 16 25% 75%;
+    --earth-brown-300: 16 25% 60%;
+    --earth-brown-400: 16 25% 47%;
+    --earth-brown-500: 16 25% 38%;
+
+    --sky-blue: 199 89% 48%;
+    --sun-yellow: 45 93% 47%;
+    --rain-blue: 210 79% 46%;
+    
+    --stress-healthy: 122 39% 49%;
+    --stress-moderate: 45 93% 47%;
+    --stress-severe: 0 84% 60%;
+
+    --alert-bg: 45 100% 90%;
+    --alert-border: 33 100% 50%;
+    --alert-text: 33 80% 30%;
+
+    /* Sidebar tokens */
+    --sidebar-background: 120 10% 96%;
+    --sidebar-foreground: 120 15% 25%;
+    --sidebar-primary: 122 39% 49%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 122 39% 92%;
+    --sidebar-accent-foreground: 122 39% 25%;
+    --sidebar-border: 120 10% 88%;
+    --sidebar-ring: 122 39% 49%;
+  }
+
+  .dark {
+    --background: 120 15% 8%;
+    --foreground: 120 10% 95%;
+
+    --card: 120 15% 12%;
+    --card-foreground: 120 10% 95%;
+
+    --popover: 120 15% 12%;
+    --popover-foreground: 120 10% 95%;
+
+    --primary: 122 39% 55%;
+    --primary-foreground: 120 15% 8%;
+
+    --secondary: 16 25% 55%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 120 15% 18%;
+    --muted-foreground: 120 10% 65%;
+
+    --accent: 122 25% 20%;
+    --accent-foreground: 122 39% 75%;
+
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 120 15% 20%;
+    --input: 120 15% 20%;
+    --ring: 122 39% 55%;
+
+    --sidebar-background: 120 15% 10%;
+    --sidebar-foreground: 120 10% 90%;
+    --sidebar-primary: 122 39% 55%;
+    --sidebar-primary-foreground: 120 15% 8%;
+    --sidebar-accent: 122 25% 20%;
+    --sidebar-accent-foreground: 122 39% 75%;
+    --sidebar-border: 120 15% 20%;
+    --sidebar-ring: 122 39% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-family: 'Roboto', system-ui, sans-serif;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Poppins', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .agri-card {
+    @apply bg-card rounded-xl shadow-lg border border-border/50 p-5 transition-all duration-200;
+  }
+
+  .agri-card:hover {
+    @apply shadow-xl;
+  }
+
+  .agri-badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+  }
+
+  .agri-badge-success {
+    @apply bg-accent text-accent-foreground;
+  }
+
+  .agri-badge-warning {
+    @apply text-amber-800;
+    background-color: hsl(var(--alert-bg));
+  }
+
+  .agri-metric {
+    @apply text-2xl font-semibold tracking-tight;
+    font-family: 'Poppins', sans-serif;
+  }
+
+  .agri-label {
+    @apply text-sm text-muted-foreground font-medium uppercase tracking-wide;
+  }
+
+  .agri-progress {
+    @apply h-3 rounded-full overflow-hidden bg-muted;
+  }
+
+  .agri-progress-bar {
+    @apply h-full rounded-full transition-all duration-500 ease-out;
+  }
+
+  .control-btn {
+    @apply px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 
+           border border-border bg-card hover:bg-muted active:scale-95;
+    font-family: 'Poppins', sans-serif;
+  }
+
+  .control-btn-primary {
+    @apply bg-primary text-primary-foreground border-primary 
+           hover:bg-primary/90 hover:shadow-md;
+  }
+
+  .control-btn-danger {
+    @apply bg-destructive text-destructive-foreground border-destructive 
+           hover:bg-destructive/90;
+  }
+}
+
+@layer utilities {
+  .font-poppins {
+    font-family: 'Poppins', sans-serif;
+  }
+
+  .font-roboto {
+    font-family: 'Roboto', sans-serif;
+  }
+
+  .text-gradient-primary {
+    @apply bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent;
+  }
+
+  .animate-sway {
+    animation: sway 4s ease-in-out infinite;
+  }
+
+  .animate-sway-delayed {
+    animation: sway 4s ease-in-out infinite 0.5s;
+  }
+
+  .animate-grow-pulse {
+    animation: growPulse 3s ease-in-out infinite;
+  }
+}
+
+@keyframes sway {
+  0%, 100% {
+    transform: rotate(-2deg);
+  }
+  50% {
+    transform: rotate(2deg);
+  }
+}
+
+@keyframes growPulse {
+  0%, 100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}

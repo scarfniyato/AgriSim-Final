@@ -1,0 +1,19 @@
+{
+  "station": "Tuguegarao",
+  "latitude": 17.647678,
+  "longitude": 121.758469,
+  "elevation_m": 62.0,
+  "data_years": "2020-2024",
+  "data_source": "DOST-PAGASA (http://bagong.pagasa.dost.gov.ph/climate/climate-data)",
+  "baseline_method": "Median for TMAX, TMIN, RH per DOY across 2020-2024. Rainfall uses stochastic method: pWet = proportion of wet days, wetAmount = median of non-zero rainfall values.",
+  "baseline_note": "5-year short-term baseline (2020-2024). NOT a WMO 30-year climate normal. Period heavily influenced by La Nina (2020-2022) and El Nino (2023-2024). Use with caution for long-term climate representation.",
+  "missing_value_treatment": "-999 replaced with NaN (excluded from median). -1 rainfall (trace values) replaced with 0mm. Tuguegarao has notable missing data: 196 instances of -999 across variables.",
+  "units": {
+    "TMAX": "Deg C",
+    "TMIN": "Deg C",
+    "RH": "%",
+    "RAINFALL": "mm",
+    "RAIN_pWet": "probability (0 to 1)",
+    "RAIN_wetAmount": "mm (median of wet days only)"
+  }
+}

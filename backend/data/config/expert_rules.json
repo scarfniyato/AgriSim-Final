@@ -1,0 +1,463 @@
+{
+  "_DOCUMENTATION": {
+    "system": "Rule-Based Expert System — Forward Chaining Inference Engine",
+    "description": "IF-THEN agronomic rules evaluated daily during simulation. Rules are processed in priority order (lower number = higher priority). Multiple rules can fire on the same day.",
+    "condition_operators": ["<", "<=", ">", ">=", "==", "!=", "in"],
+    "condition_variables": [
+      "f_water        — water stress factor (0-1, where 1=no stress)",
+      "f_heat         — heat stress factor (0-1, where 1=no stress)",
+      "f_co2          — CO2 fertilization factor (>= 1.0)",
+      "f_solar        — canopy interception fraction (0-1)",
+      "f_nutrient     — nutrient availability factor (0-1, where 1=optimal)",
+      "f_pest         — pest damage factor (0.5-1, where 1=no pest pressure)",
+      "soil_water     — current soil water content (mm)",
+      "soil_water_pct — soil water as % of available water capacity",
+      "tmax           — daily maximum temperature (°C)",
+      "tmin           — daily minimum temperature (°C)",
+      "tmean          — daily mean temperature (°C)",
+      "rainfall       — daily rainfall (mm)",
+      "biomass        — cumulative biomass (g/m²)",
+      "cumulative_gdd — cumulative thermal time (°C·d)",
+      "growth_stage   — current growth stage string",
+      "day            — simulation day number (1-based)",
+      "consecutive_dry_days — days since last rainfall event",
+      "eta            — actual evapotranspiration (mm/day)",
+      "etp            — potential evapotranspiration (mm/day)"
+    ],
+    "action_types": [
+      "alert         — generates a user-facing notification",
+      "modifier      — adjusts a growth factor (not yet implemented in v1)"
+    ],
+    "alert_severities": ["info", "warning", "error", "success"]
+  },
+
+  "rules": [
+
+    {
+      "id": "R001",
+      "name": "critical_water_stress",
+      "priority": 1,
+      "description": "Severe water deficit — crop is near wilting; immediate irrigation required.",
+      "conditions": [
+        {"variable": "f_water", "operator": "<", "value": 0.4}
+      ],
+      "actions": [
+        {
+          "type": "alert",
+          "severity": "error",
+          "message": "Critical water stress! Soil moisture is severely depleted. Irrigate immediately to prevent irreversible crop damage.",
+          "recommendation": "Apply 25-30mm irrigation as soon as possible."
+        }
+      ]
+    },
+
+    {
+      "id": "R002",
+      "name": "moderate_water_stress",
+      "priority": 2,
+      "description": "Moderate water deficit — growth rate is being reduced.",
+      "conditions": [
+        {"variable": "f_water", "operator": "<", "value": 0.7},
+        {"variable": "f_water", "operator": ">=", "value": 0.4}
+      ],
+      "actions": [
+        {
+          "type": "alert",
+          "severity": "warning",
+          "message": "Moderate water stress detected. Growth rate is being reduced. Consider irrigation within 1-2 days.",
+          "recommendation": "Apply 15-20mm irrigation to restore optimal soil moisture."
+        }
+      ]
+    },
+
+    {
+      "id": "R003",
+      "name": "critical_heat_stress",
+      "priority": 3,
+      "description": "Extreme temperature — growth is severely inhibited; pollen viability at risk.",
+      "conditions": [
+        {"variable": "f_heat", "operator": "<", "value": 0.4}
+      ],
+      "actions": [
+        {
+          "type": "alert",
+          "severity": "error",
+          "message": "Critical heat stress! Temperatures are severely above optimal. Pollen viability and fruit set may be compromised.",
+          "recommendation": "Shade netting and increased irrigation frequency can mitigate heat stress."
+        }
+      ]
+    },
+
+    {
+      "id": "R004",
+      "name": "moderate_heat_stress",
+      "priority": 4,
+      "description": "Above-optimal temperature — biomass accumulation is reduced.",
+      "conditions": [
+        {"variable": "f_heat", "operator": "<", "value": 0.75},
+        {"variable": "f_heat", "operator": ">=", "value": 0.4}
+      ],
+      "actions": [
+        {
+          "type": "alert",
+          "severity": "warning",
+          "message": "Heat stress detected. Daily maximum temperature is above the crop's optimal range. Biomass accumulation is reduced.",
+          "recommendation": "Monitor temperature trend. Consider shade nets during peak heat (11AM-3PM)."
+        }
+      ]
+    },
+
+    {
+      "id": "R005",
+      "name": "flowering_water_critical",
+      "priority": 1,
+      "description": "Water stress during flowering — high risk of pollination failure and yield loss.",
+      "conditions": [
+        {"variable": "growth_stage", "operator": "in", "value": ["flowering"]},
+        {"variable": "f_water", "operator": "<", "value": 0.7}
+      ],
+      "actions": [
+        {
+          "type": "alert",
+          "severity": "error",
+          "message": "CRITICAL: Water stress during flowering stage! Pollination failure risk is high. Yield loss of 30-50% is possible without immediate intervention.",
+          "recommendation": "Prioritize irrigation now. Maintain soil moisture above 70% of field capacity throughout flowering."
+        }
+      ]
+    },
+
+    {
+      "id": "R006",
+      "name": "flowering_heat_critical",
+      "priority": 1,
+      "description": "Heat stress during flowering — pollen viability reduced.",
+      "conditions": [
+        {"variable": "growth_stage", "operator": "in", "value": ["flowering"]},
+        {"variable": "f_heat", "operator": "<", "value": 0.7}
+      ],
+      "actions": [
+        {
+          "type": "alert",
+          "severity": "error",
+          "message": "CRITICAL: Heat stress during flowering stage! High temperatures reduce pollen viability and fruit/grain set.",
+          "recommendation": "Apply overhead irrigation to cool the canopy. Avoid pesticide application during peak heat."
+        }
+      ]
+    },
+
+    {
+      "id": "R007",
+      "name": "flowering_stage_notice",
+      "priority": 5,
+      "description": "Informational notice at the start of flowering — critical management period.",
+      "conditions": [
+        {"variable": "growth_stage", "operator": "in", "value": ["flowering", "fruit_set"]}
+      ],
+      "actions": [
+        {
+          "type": "alert",
+          "severity": "warning",
+          "message": "Crop has entered the flowering/reproductive stage. This is the most critical period for yield determination. Maintain optimal water and temperature conditions.",
+          "recommendation": "Avoid water stress. Reduce pest pressure with preventive measures."
+        }
+      ]
+    },
+
+    {
+      "id": "R008",
+      "name": "drought_risk_consecutive_dry",
+      "priority": 3,
+      "description": "Prolonged dry spell increasing drought risk.",
+      "conditions": [
+        {"variable": "consecutive_dry_days", "operator": ">=", "value": 7}
+      ],
+      "actions": [
+        {
+          "type": "alert",
+          "severity": "warning",
+          "message": "Drought risk: No significant rainfall for 7+ consecutive days. Monitor soil moisture closely.",
+          "recommendation": "Inspect soil moisture manually. Plan irrigation if no rain is expected within 2 days."
+        }
+      ]
+    },
+
+    {
+      "id": "R009",
+      "name": "grain_fill_water_stress",
+      "priority": 2,
+      "description": "Water stress during grain/fruit filling — yield reduction is occurring.",
+      "conditions": [
+        {"variable": "growth_stage", "operator": "in", "value": ["grain_filling", "fruit_set", "root_bulking"]},
+        {"variable": "f_water", "operator": "<", "value": 0.75}
+      ],
+      "actions": [
+        {
+          "type": "alert",
+          "severity": "warning",
+          "message": "Water stress during grain/fruit/root filling stage. Yield is being reduced. Consistent moisture is critical at this stage.",
+          "recommendation": "Apply 20-25mm irrigation. Maintain regular irrigation schedule until maturity."
+        }
+      ]
+    },
+
+    {
+      "id": "R010",
+      "name": "low_radiation_day",
+      "priority": 8,
+      "description": "Very low solar radiation — biomass accumulation severely limited today.",
+      "conditions": [
+        {"variable": "f_solar", "operator": "<", "value": 0.3}
+      ],
+      "actions": [
+        {
+          "type": "alert",
+          "severity": "info",
+          "message": "Canopy interception is very low today (early growth stage or significant cloud cover). Biomass accumulation will be minimal.",
+          "recommendation": "No action required. Growth rate will improve as canopy develops."
+        }
+      ]
+    },
+
+    {
+      "id": "R011",
+      "name": "harvest_approaching",
+      "priority": 6,
+      "description": "Crop approaching physiological maturity — prepare for harvest.",
+      "conditions": [
+        {"variable": "growth_stage", "operator": "in", "value": ["maturity"]}
+      ],
+      "actions": [
+        {
+          "type": "alert",
+          "severity": "info",
+          "message": "Crop is approaching physiological maturity. Begin preparing harvest equipment and post-harvest storage.",
+          "recommendation": "Assess crop visually. Reduce irrigation frequency as crop approaches harvest to improve quality."
+        }
+      ]
+    },
+
+    {
+      "id": "R012",
+      "name": "harvest_ready",
+      "priority": 5,
+      "description": "Crop has reached physiological maturity — harvest now.",
+      "conditions": [
+        {"variable": "growth_stage", "operator": "in", "value": ["harvest_ready"]}
+      ],
+      "actions": [
+        {
+          "type": "alert",
+          "severity": "success",
+          "message": "Crop has reached physiological maturity! Harvest as soon as possible to avoid quality loss due to overmaturity.",
+          "recommendation": "Harvest within 5-7 days for optimal yield and quality. Delay increases risk of field losses."
+        }
+      ]
+    },
+
+    {
+      "id": "R013",
+      "name": "optimal_conditions",
+      "priority": 10,
+      "description": "All stress factors are within optimal range — ideal growing conditions.",
+      "conditions": [
+        {"variable": "f_water", "operator": ">=", "value": 0.85},
+        {"variable": "f_heat", "operator": ">=", "value": 0.85}
+      ],
+      "actions": [
+        {
+          "type": "alert",
+          "severity": "success",
+          "message": "Optimal growing conditions. All stress factors are within acceptable range. Crop is developing at near-maximum potential.",
+          "recommendation": "Maintain current management practices."
+        }
+      ]
+    },
+
+    {
+      "id": "R014",
+      "name": "emergence_notice",
+      "priority": 7,
+      "description": "Crop has germinated — seedling establishment phase.",
+      "conditions": [
+        {"variable": "growth_stage", "operator": "in", "value": ["emergence"]}
+      ],
+      "actions": [
+        {
+          "type": "alert",
+          "severity": "info",
+          "message": "Crop has emerged. Seedling establishment is in progress. Protect from excessive rainfall, waterlogging, and surface crusting.",
+          "recommendation": "Ensure adequate soil moisture but avoid waterlogging. Scout for early pest/disease pressure."
+        }
+      ]
+    },
+
+    {
+      "id": "R015",
+      "name": "combined_heat_water_stress",
+      "priority": 1,
+      "description": "Simultaneous heat and water stress — most damaging condition combination.",
+      "conditions": [
+        {"variable": "f_water", "operator": "<", "value": 0.6},
+        {"variable": "f_heat", "operator": "<", "value": 0.6}
+      ],
+      "actions": [
+        {
+          "type": "alert",
+          "severity": "error",
+          "message": "SEVERE: Combined heat and water stress detected! This is the most damaging condition for crop growth. Immediate intervention is required.",
+          "recommendation": "Irrigate immediately. Apply mulching to reduce soil temperature and conserve moisture. Consider partial shade if available."
+        }
+      ]
+    },
+
+    {
+      "id": "R016",
+      "name": "critical_nutrient_deficiency",
+      "priority": 2,
+      "description": "Severe nutrient deficiency — growth is severely limited due to lack of essential nutrients.",
+      "conditions": [
+        {"variable": "f_nutrient", "operator": "<", "value": 0.6}
+      ],
+      "actions": [
+        {
+          "type": "alert",
+          "severity": "error",
+          "message": "Critical nutrient deficiency detected! Soil nutrient levels are severely depleted. Biomass accumulation is being severely limited.",
+          "recommendation": "Apply balanced NPK fertilizer immediately. Consider foliar fertilization for quick nutrient uptake. Soil test recommended to identify specific deficiencies."
+        }
+      ]
+    },
+
+    {
+      "id": "R017",
+      "name": "moderate_nutrient_deficiency",
+      "priority": 4,
+      "description": "Moderate nutrient deficiency — growth rate is reduced due to suboptimal nutrient availability.",
+      "conditions": [
+        {"variable": "f_nutrient", "operator": "<", "value": 0.8},
+        {"variable": "f_nutrient", "operator": ">=", "value": 0.6}
+      ],
+      "actions": [
+        {
+          "type": "alert",
+          "severity": "warning",
+          "message": "Moderate nutrient stress detected. Growth rate is being reduced due to suboptimal nutrient availability.",
+          "recommendation": "Apply recommended fertilizer dosage based on crop stage. Split application recommended for better nutrient use efficiency."
+        }
+      ]
+    },
+
+    {
+      "id": "R018",
+      "name": "flowering_nutrient_critical",
+      "priority": 1,
+      "description": "Nutrient deficiency during flowering — high risk of poor fruit/grain set.",
+      "conditions": [
+        {"variable": "growth_stage", "operator": "in", "value": ["flowering", "fruit_set"]},
+        {"variable": "f_nutrient", "operator": "<", "value": 0.75}
+      ],
+      "actions": [
+        {
+          "type": "alert",
+          "severity": "error",
+          "message": "CRITICAL: Nutrient deficiency during flowering/fruit set! Poor nutrition during reproduction can severely reduce yield.",
+          "recommendation": "Apply foliar fertilizer with micronutrients (Boron, Zinc) immediately. Follow with soil application of NPK within 2-3 days."
+        }
+      ]
+    },
+
+    {
+      "id": "R019",
+      "name": "high_pest_pressure",
+      "priority": 2,
+      "description": "High pest pressure — significant crop damage from pests is occurring or likely.",
+      "conditions": [
+        {"variable": "f_pest", "operator": "<", "value": 0.75}
+      ],
+      "actions": [
+        {
+          "type": "alert",
+          "severity": "error",
+          "message": "High pest pressure detected! Current conditions (temperature, humidity, crop stage) are highly favorable for pest development. Crop damage is occurring or imminent.",
+          "recommendation": "Scout field immediately for pest presence. Apply appropriate pest management measures (IPM, bio-pesticides, or chemical control as needed). Monitor daily."
+        }
+      ]
+    },
+
+    {
+      "id": "R020",
+      "name": "moderate_pest_pressure",
+      "priority": 4,
+      "description": "Moderate pest pressure — conditions favor pest development.",
+      "conditions": [
+        {"variable": "f_pest", "operator": "<", "value": 0.9},
+        {"variable": "f_pest", "operator": ">=", "value": 0.75}
+      ],
+      "actions": [
+        {
+          "type": "alert",
+          "severity": "warning",
+          "message": "Moderate pest pressure detected. Environmental conditions are favorable for pest development.",
+          "recommendation": "Increase scouting frequency. Consider preventive measures such as pheromone traps, natural predators, or bio-control agents."
+        }
+      ]
+    },
+
+    {
+      "id": "R021",
+      "name": "flowering_pest_critical",
+      "priority": 1,
+      "description": "Pest pressure during flowering — critical risk to pollination and fruit/grain set.",
+      "conditions": [
+        {"variable": "growth_stage", "operator": "in", "value": ["flowering", "fruit_set"]},
+        {"variable": "f_pest", "operator": "<", "value": 0.85}
+      ],
+      "actions": [
+        {
+          "type": "alert",
+          "severity": "error",
+          "message": "CRITICAL: Pest pressure during flowering/fruit set! Pests can damage flowers, reduce pollination, and cause fruit/grain drop.",
+          "recommendation": "Apply targeted pest control immediately. Use pollinator-safe products if possible. Focus on thrips, aphids, and fruit borers depending on crop."
+        }
+      ]
+    },
+
+    {
+      "id": "R022",
+      "name": "vegetative_pest_warning",
+      "priority": 5,
+      "description": "Pest pressure during vegetative growth — early pest establishment can multiply quickly.",
+      "conditions": [
+        {"variable": "growth_stage", "operator": "in", "value": ["vegetative", "seedling"]},
+        {"variable": "f_pest", "operator": "<", "value": 0.85}
+      ],
+      "actions": [
+        {
+          "type": "alert",
+          "severity": "warning",
+          "message": "Pest pressure during early growth stage. Young plants are vulnerable to pest damage. Early pest populations can multiply rapidly.",
+          "recommendation": "Scout for early-stage pests (aphids, leaf miners, cutworms). Apply preventive control measures. Protect seedlings with physical barriers if needed."
+        }
+      ]
+    },
+
+    {
+      "id": "R023",
+      "name": "combined_nutrient_pest_stress",
+      "priority": 1,
+      "description": "Simultaneous nutrient deficiency and pest pressure — weakened plant defense.",
+      "conditions": [
+        {"variable": "f_nutrient", "operator": "<", "value": 0.7},
+        {"variable": "f_pest", "operator": "<", "value": 0.8}
+      ],
+      "actions": [
+        {
+          "type": "alert",
+          "severity": "error",
+          "message": "SEVERE: Combined nutrient deficiency and pest pressure! Nutrient-stressed plants have weaker defenses against pests, creating a compounding effect.",
+          "recommendation": "Address both issues simultaneously: Apply foliar fertilizer for quick nutrient uptake AND implement pest control measures. Healthy nutrition improves pest resistance."
+        }
+      ]
+    }
+  ]
+}

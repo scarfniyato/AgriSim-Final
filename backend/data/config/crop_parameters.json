@@ -1,0 +1,224 @@
+{
+  "_DOCUMENTATION": {
+    "model": "SIMPLE Crop Model — Zhao C. et al. (2019). Eur. J. Agron. 104, 97-107.",
+    "parameter_source": "Table 1a of project document (pages 17-18). ALL numeric crop values below are taken directly from that table.",
+    "units": {
+      "t_sum":       "°C·d — total thermal time from sowing to physiological maturity",
+      "hi":          "dimensionless (0-1) — harvest index = harvestable yield / total biomass",
+      "i_50a":       "°C·d — cultivar FIXED: cumulative TT at which canopy intercepts 50% radiation during leaf growth",
+      "i_50b":       "°C·d — cultivar STARTING value: cumulative TT for 50% radiation loss during senescence; increases daily with heat/water stress",
+      "i_50maxH":    "°C·d per day — species: maximum daily increase in I50B due to heat stress (accelerates senescence)",
+      "i_50maxW":    "°C·d per day — species: maximum daily increase in I50B due to water stress (accelerates senescence)",
+      "t_base":      "°C — base temperature (GDD = 0 below this, fTemp = 0 below this)",
+      "t_opt":       "°C — optimal temperature (fTemp = 1.0 at and above this)",
+      "t_heat_onset":"°C — daily Tmax above which heat stress factor (fHeat) begins to drop below 1",
+      "t_extreme":   "°C — daily Tmax at which fHeat = 0 (growth/biomass completely halted)",
+      "rue":         "g MJ-1 — radiation use efficiency at reference CO2=350ppm, no stress",
+      "f_solar_max": "dimensionless (0-1) — maximum canopy solar radiation interception fraction",
+      "s_co2":       "per ppm — CO2 sensitivity (fCO2 = 1 + s_co2 × (CO2 - 350)); table value divided by 100",
+      "s_water":     "dimensionless — water stress sensitivity coefficient (fWater = max(0, 1 - s_water × ARID))",
+      "co2_reference":"ppm — reference CO2 concentration where fCO2 = 1.0",
+      "co2_saturation":"ppm — CO2 at which fCO2 saturates: fCO2 = 1 + s_co2 × (co2_saturation - 350)",
+      "stop_mode":   "'maturity' — simulation runs until TTc >= T_sum (crop reaches physiological maturity). No fixed day count.",
+      "max_days_safety": "days — hard safety cap to prevent infinite runs. If maturity not reached by this day, sim stops and a warning is shown.",
+      "gdd_stages":  "°C·d cumulative TT thresholds for each growth stage (proportional to T_sum; verify with field records)"
+    },
+    "fTemp_equation":   "fTemp = 0 if Tmean < T_base; (Tmean-T_base)/(T_opt-T_base) if T_base <= Tmean < T_opt; 1.0 if Tmean >= T_opt",
+    "fHeat_equation":   "fHeat = 1 if Tmax <= T_heat_onset; 1-(Tmax-T_heat_onset)/(T_extreme-T_heat_onset) if T_heat_onset < Tmax < T_extreme; 0 if Tmax >= T_extreme",
+    "fCO2_equation":    "fCO2 = 1 + s_co2*(CO2-350) for CO2<=700; = 1 + s_co2*350 for CO2>700 (saturates)",
+    "fSolar_growth":    "fSolar = f_solar_max / (1 + exp(-0.01*(TTc - I50A))) when TTc <= (T_sum - I50B_dynamic)",
+    "fSolar_senescence":"fSolar = f_solar_max / (1 + exp(+0.01*(TTc - (T_sum - I50B_dynamic)))) when TTc > (T_sum - I50B_dynamic)",
+    "I50B_update":      "I50B_dynamic += i_50maxH*(1-fHeat) + i_50maxW*(1-fWater) each day (stress accelerates senescence)",
+    "biomass_equation": "dB = RUE_eff * SRAD * fSolar * fTemp * min(fHeat, fWater), where RUE_eff = RUE * fCO2 * fertilizer_modifier"
+  },
+
+  "sweet_corn": {
+    "name": "Sweet Corn",
+    "variety": "GSS0966 sh2",
+    "plant_type": "C4",
+    "_note_c4": "Sweet corn (Zea mays saccharata) is a C4 crop. C4 photosynthesis is largely CO2-saturated at ambient levels, hence the very low S_CO2=0.01 (table value) vs 0.07 for C3 crops.",
+
+    "stop_mode": "maturity",
+    "max_days_safety": 365,
+    "_note_stop": "Simulation runs until TTc >= T_sum (1900 °C·d). Safety cap = 365 days to prevent infinite runs.",
+
+    "phenology": {
+      "t_sum": 1900,
+      "_source": "Table_1a_document_p17_row10"
+    },
+
+    "yield": {
+      "hi": 0.40,
+      "_source": "Table_1a_document_p17_row10"
+    },
+
+    "canopy": {
+      "i_50a": 500,
+      "i_50b": 250,
+      "_source": "Table_1a_document_p17_row10",
+      "_note": "i_50b is the STARTING cultivar value. It increases daily via stress (see I50B_update equation above)."
+    },
+
+    "temperature": {
+      "t_base": 8,
+      "t_opt": 27,
+      "t_heat_onset": 34,
+      "t_extreme": 50,
+      "_source": "Table_1a_document_p17_row10"
+    },
+
+    "radiation": {
+      "rue": 1.70,
+      "f_solar_max": 0.95,
+      "_source_rue": "Table_1a_document_p17_row10",
+      "_source_f_solar_max": "estimated_zhao2019 — not in Table 1a; standard SIMPLE model value 0.95 used; verify if document specifies otherwise"
+    },
+
+    "stress": {
+      "i_50maxH": 100,
+      "i_50maxW": 5,
+      "s_co2": 0.0001,
+      "s_water": 2.0,
+      "_source": "Table_1a_document_p17_row10",
+      "_note_s_co2": "Table 1a gives S_CO2=0.01 per 100ppm. Per-ppm value = 0.01/100 = 0.0001. C4 crop — minimal CO2 fertilization effect.",
+      "_note_s_water": "Table 1a gives S_water=2.0. Used in: fWater = max(0, 1 - 2.0 * ARID). High sensitivity — crop reaches fWater=0 at ARID=0.5."
+    },
+
+    "co2_reference": 350,
+    "co2_saturation": 700,
+
+    "gdd_stages": {
+      "_note": "Proportional to T_sum=1900. Verify against GSS0966 field records.",
+      "seedling": 0,
+      "vegetative":    475,
+      "flowering":     950,
+      "maturity": 1900
+    }
+  },
+
+  "tomato": {
+    "name": "Tomato",
+    "variety": "Agriset761",
+    "plant_type": "C3",
+    "_note_c3": "Tomato (Solanum lycopersicum) is a C3 crop. C3 photosynthesis responds significantly to elevated CO2 (S_CO2=0.07 vs 0.01 for C4).",
+
+    "stop_mode": "maturity",
+    "max_days_safety": 365,
+    "_note_stop": "Simulation runs until TTc >= T_sum (2300 °C·d). Safety cap = 365 days to prevent infinite runs.",
+
+    "phenology": {
+      "t_sum": 2300,
+      "_source": "Table_1a_document_p17_row9_Agriset761"
+    },
+
+    "yield": {
+      "hi": 0.50,
+      "_source": "Table_1a_document_p17_row9_Agriset761"
+    },
+
+    "canopy": {
+      "i_50a": 550,
+      "i_50b": 300,
+      "_source": "Table_1a_document_p17_row9_Agriset761"
+    },
+
+    "temperature": {
+      "t_base": 6,
+      "t_opt": 26,
+      "t_heat_onset": 32,
+      "t_extreme": 45,
+      "_source": "Table_1a_document_p17_row9_species_parameters"
+    },
+
+    "radiation": {
+      "rue": 1.00,
+      "f_solar_max": 0.95,
+      "_source_rue": "Table_1a_document_p17_row9_species_parameters",
+      "_source_f_solar_max": "estimated_zhao2019 — not in Table 1a; standard SIMPLE model value 0.95 used"
+    },
+
+    "stress": {
+      "i_50maxH": 100,
+      "i_50maxW": 5,
+      "s_co2": 0.0007,
+      "s_water": 2.5,
+      "_source": "Table_1a_document_p17_row9_species_parameters",
+      "_note_s_co2": "Table 1a gives S_CO2=0.07 per 100ppm. Per-ppm = 0.07/100 = 0.0007.",
+      "_note_s_water": "Table 1a gives S_water=2.5. High drought sensitivity — fWater=0 at ARID=0.4."
+    },
+
+    "co2_reference": 350,
+    "co2_saturation": 700,
+
+    "gdd_stages": {
+      "_note": "Proportional to T_sum=2300. Tomato stages scaled from document page 2 example. Verify against Agriset761 field data.",
+      "seedling": 0,
+      "vegetative":    805,
+      "flowering":     1472,
+      "maturity": 2300
+    }
+  },
+
+  "carrot": {
+    "name": "Carrot",
+    "variety": "Kazan F1",
+    "plant_type": "C3",
+    "_note_c3": "Carrot (Daucus carota) is a C3 root crop. HI = 0.70 represents the large proportion of total biomass stored in the harvestable taproot.",
+
+    "stop_mode": "maturity",
+    "max_days_safety": 365,
+    "_note_stop": "Simulation runs until TTc >= T_sum (2450 °C·d). Safety cap = 365 days to prevent infinite runs.",
+
+    "phenology": {
+      "t_sum": 2450,
+      "_source": "Table_1a_document_p18_row12_KazanF1"
+    },
+
+    "yield": {
+      "hi": 0.70,
+      "_source": "Table_1a_document_p18_row12_KazanF1"
+    },
+
+    "canopy": {
+      "i_50a": 550,
+      "i_50b": 250,
+      "_source": "Table_1a_document_p18_row12_KazanF1"
+    },
+
+    "temperature": {
+      "t_base": 4,
+      "t_opt": 22,
+      "t_heat_onset": 32,
+      "t_extreme": 45,
+      "_source": "Table_1a_document_p18_row12_species_parameters"
+    },
+
+    "radiation": {
+      "rue": 1.00,
+      "f_solar_max": 0.95,
+      "_source_rue": "Table_1a_document_p18_row12_species_parameters",
+      "_source_f_solar_max": "estimated_zhao2019 — not in Table 1a; standard SIMPLE model value 0.95 used"
+    },
+
+    "stress": {
+      "i_50maxH": 100,
+      "i_50maxW": 5,
+      "s_co2": 0.0007,
+      "s_water": 2.0,
+      "_source": "Table_1a_document_p18_row12_species_parameters",
+      "_note_s_co2": "Table 1a gives S_CO2=0.07 per 100ppm. Per-ppm = 0.07/100 = 0.0007.",
+      "_note_s_water": "Table 1a gives S_water=2.0. fWater=0 at ARID=0.5."
+    },
+
+    "co2_reference": 350,
+    "co2_saturation": 700,
+
+    "gdd_stages": {
+      "_note": "Proportional to T_sum=2450. Verify against Kazan F1 field records in Philippines highlands.",
+      "seedling": 0,
+      "vegetative":    735,
+      "root_bulking":  1225,
+      "maturity": 2450
+    }
+  }
+}

@@ -17,6 +17,16 @@ const RECOMMENDED_STATION_LABEL_BY_CROP: Record<CropId, string> = {
   tomato: 'Malaybalay',
   carrot: 'Baguio',
 };
+const WEATHER_STATION_OPTION_LABELS: Record<LocationId, string> = {
+  baguio_benguet: 'Baguio, Benguet (Highland)',
+  malaybalay_bukidnon: 'Malaybalay, Bukidnon (Mid-elevation)',
+  tuguegarao_cagayan: 'Tuguegarao, Cagayan (Lowland)',
+};
+const RECOMMENDED_PLANTING_WINDOW_BY_CROP: Record<CropId, string> = {
+  sweet_corn: 'Recommended planting window: April-June (wet season), October-December (dry season)',
+  carrot: 'Recommended planting window: Year-round in highlands; late October-February in low/mid elevation areas',
+  tomato: 'Recommended planting window: September-January in cooler areas; November-February in lowlands',
+};
 const SCENARIOS: { id: ScenarioId; name: string; description: string }[] = [
   { id: 'baseline', name: 'Recommended Practices (Baseline)', description: 'Standard agricultural practices with optimal management' },
   { id: 'drought', name: 'Drought Stress Scenario', description: 'Simulates extended dry periods and water scarcity' },
@@ -206,7 +216,9 @@ export default function ScenarioSetup() {
                 className="w-full px-4 py-3 border border-border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-primary focus:border-primary transition-all"
               >
                 {LOCATIONS.map((loc) => (
-                  <option key={loc} value={loc}>{getLocationDisplayName(loc)}</option>
+                  <option key={loc} value={loc}>
+                    {WEATHER_STATION_OPTION_LABELS[loc] ?? getLocationDisplayName(loc)}
+                  </option>
                 ))}
               </select>
               <p className="mt-2 text-xs text-muted-foreground">
@@ -226,7 +238,10 @@ export default function ScenarioSetup() {
                 ))}
               </select>
               <p className="mt-2 text-xs text-muted-foreground">
-                {selectedSeason === 'wet_season' ? 'Wet' : 'Dry'} Season (based on planting month)
+                Season: {selectedSeason === 'wet_season' ? 'Wet Season' : 'Dry Season'} (based on planting month)
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {RECOMMENDED_PLANTING_WINDOW_BY_CROP[selectedCrop]}
               </p>
             </div>
           </div>

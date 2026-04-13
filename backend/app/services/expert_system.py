@@ -588,33 +588,54 @@ def compute_stress_factors(
     # Capped Escalation Logic
     # - Escalation thresholds based on PhilGAP 7-14 day reapplication interval
     # - Savary et al. (2019): unmanaged fields experience 30-40% losses
+    # Stage-aware ordering:
+    # 1) Evaluate stage susceptibility first to set floor/cap.
+    # 2) Apply spray timing logic.
+    # 3) Clamp pressure so it cannot go below floor or above cap.
+    susceptibility = STAGE_SUSCEPTIBILITY.get(growth_stage, 'medium')
 
-    # Step 1: Protection window — recently sprayed (PhilGAP: 7-14 days)
+    FLOOR_BY_SUSCEPTIBILITY = {
+        'low': 'none',
+        'medium': 'low',
+        'high': 'moderate',
+    }
+    CAP_BY_SUSCEPTIBILITY = {
+        'low': 'none',
+        'medium': 'moderate',
+        'high': 'severe',
+    }
+
+    # Candidate pressure from timing logic
     if days_since_spray < 10:
-        pressure = 'low'
+        candidate_pressure = 'low'
     else:
-        # Step 2: Get base susceptibility from stage
-        susceptibility = STAGE_SUSCEPTIBILITY.get(growth_stage, 'medium')
-
-        # Low susceptibility stages — no escalation (maturity)
         if susceptibility == 'low':
-            pressure = 'none'
-
-        # Medium susceptibility — capped at moderate (vegetative)
+            candidate_pressure = 'none'
         elif susceptibility == 'medium':
             if days_since_spray >= 7:
-                pressure = 'moderate'
+                candidate_pressure = 'moderate'
             else:
-                pressure = 'low'
-
-        # High susceptibility — full escalation path (seedling, flowering)
+                candidate_pressure = 'low'
         else:  # susceptibility == 'high'
             if days_since_spray >= 14:
-                pressure = 'severe'  # CAP — never goes beyond this
+                candidate_pressure = 'severe'
             elif days_since_spray >= 7:
-                pressure = 'high'
+                candidate_pressure = 'high'
             else:
-                pressure = 'moderate'  # baseline for high susceptibility
+                candidate_pressure = 'moderate'
+
+    # Enforce stage floor/cap
+    pressure_order = ['none', 'low', 'moderate', 'high', 'severe']
+    pressure_rank = {name: idx for idx, name in enumerate(pressure_order)}
+
+    floor_pressure = FLOOR_BY_SUSCEPTIBILITY[susceptibility]
+    cap_pressure = CAP_BY_SUSCEPTIBILITY[susceptibility]
+    floor_rank = pressure_rank[floor_pressure]
+    cap_rank = pressure_rank[cap_pressure]
+    candidate_rank = pressure_rank.get(candidate_pressure, pressure_rank['low'])
+
+    clamped_rank = min(max(candidate_rank, floor_rank), cap_rank)
+    pressure = pressure_order[clamped_rank]
 
     # Step 3: Convert pressure level to stress factor
     f_pest = PRESSURE_LEVELS.get(pressure, 0.92)
@@ -623,3 +644,4 @@ def compute_stress_factors(
         'f_nutrient': round(f_nutrient, 4),
         'f_pest': round(f_pest, 4),
     }
+

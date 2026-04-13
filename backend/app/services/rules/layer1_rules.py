@@ -309,7 +309,7 @@ LAYER1_RULES = [
         "id": "EXP_PEST_04",
         "severity": "Moderate",
         "condition": lambda state: state["f_pest"] == 0.75,
-        "additional_condition": lambda state: state["growth_stage"] in ["seedling", "flowering"],
+        "additional_condition": lambda state: state["growth_stage"] in ["seedling", "flowering", "reproductive"],
         "conclusion": "Moderate pest pressure detected at a high-susceptibility growth stage. Widespread pest activity is causing measurable growth reduction.",
         "basis": "Oerke (2006); Savary et al. (2019) — 25% yield loss; DA Production Guides — Seedling: cutworms/aphids; Flowering: fruitworm"
     },
@@ -396,7 +396,7 @@ LAYER1_RULES = [
         "id": "EXP_SCORN_TEMP_02",
         "severity": "Severe",
         "condition": lambda state: state.get("crop_name", "") == "Sweet Corn" and state["f_heat"] < 1.0,
-        "additional_condition": lambda state: state.get("t_avg", 20) > 35 and state["growth_stage"] == "flowering",
+        "additional_condition": lambda state: state.get("t_avg", 20) > 35 and state["growth_stage"] in ["flowering", "reproductive"],
         "conclusion": "Extreme heat during flowering disrupts pollen viability and silk receptivity, increasing the risk of poor ear set and yield loss.",
         "basis": "Zhao et al. (2019) — fHeat stress factor; DA RFO 02 Corn Production Guide — 'Drying of tassels, poor pollination and unfilled ears' listed as effect of heat stress"
     },
@@ -404,7 +404,7 @@ LAYER1_RULES = [
     {
         "id": "EXP_SCORN_WATER_FLOWER_01",
         "severity": "Moderate",
-        "condition": lambda state: state.get("crop_name", "") == "Sweet Corn" and state["growth_stage"] == "flowering",
+        "condition": lambda state: state.get("crop_name", "") == "Sweet Corn" and state["growth_stage"] in ["flowering", "reproductive"],
         "additional_condition": lambda state: 0.6 <= state["f_water"] < 0.8,
         "conclusion": "Moderate water stress detected during flowering. Sweet corn requires consistent moisture during tasseling and silking for proper pollination and kernel development.",
         "basis": "DA RFO 02 Corn Production Guide — 'Irrigation is important during the reproductive stage to ensure flower and silk synchronization, pollination and ear development.'"
@@ -413,7 +413,7 @@ LAYER1_RULES = [
     {
         "id": "EXP_SCORN_WATER_FLOWER_02",
         "severity": "Severe",
-        "condition": lambda state: state.get("crop_name", "") == "Sweet Corn" and state["growth_stage"] == "flowering",
+        "condition": lambda state: state.get("crop_name", "") == "Sweet Corn" and state["growth_stage"] in ["flowering", "reproductive"],
         "additional_condition": lambda state: state["f_water"] < 0.6,
         "conclusion": "Severe water stress during flowering may cause poor silk tassel synchronization, incomplete pollination, and reduced ear formation.",
         "basis": "DA RFO 02 Corn Production Guide — 'Irrigation may be applied through flushing or overhead method' during reproductive stage; 'Drying of tassels, poor pollination and unfilled ears' as drought effect"
@@ -452,7 +452,7 @@ LAYER1_RULES = [
     {
         "id": "EXP_TOMATO_WATER_FLOWER_01",
         "severity": "Moderate",
-        "condition": lambda state: state.get("crop_name", "") == "Tomato" and state["growth_stage"] == "flowering",
+        "condition": lambda state: state.get("crop_name", "") == "Tomato" and state["growth_stage"] in ["flowering", "reproductive"],
         "additional_condition": lambda state: 0.6 <= state["f_water"] < 0.8,
         "conclusion": "Mild to moderate water stress during flowering. Tomatoes require consistent moisture at flowering; insufficient water may reduce fruit set.",
         "basis": "DA RFO 02 Tomato Production Guide (2017) — 'Water or irrigate the plants just to moisten the root zone especially during the onset of flowering up to the last harvest.'"
@@ -461,7 +461,7 @@ LAYER1_RULES = [
     {
         "id": "EXP_TOMATO_WATER_FLOWER_02",
         "severity": "Severe",
-        "condition": lambda state: state.get("crop_name", "") == "Tomato" and state["growth_stage"] == "flowering",
+        "condition": lambda state: state.get("crop_name", "") == "Tomato" and state["growth_stage"] in ["flowering", "reproductive"],
         "additional_condition": lambda state: state["f_water"] < 0.6,
         "conclusion": "Severe water stress during flowering. Continued drought may cause flower drop and significant yield loss.",
         "basis": "DA RFO 02 Tomato Production Guide (2017) — 'Water or irrigate the plants just to moisten the root zone especially during the onset of flowering up to the last harvest.'"

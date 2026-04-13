@@ -1,11 +1,11 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SimulationApiData, SimulationConfig } from "@/lib/types";
-import { getCropDisplayName, getLocationDisplayName, getMonthDisplayName } from "@/lib/utils";
+import { getCO2DisplayName, getCropDisplayName, getLocationDisplayName, getMonthDisplayName } from "@/lib/utils";
 import { Wheat, Droplets, Sun, Thermometer, TrendingUp, ArrowLeft, Sprout, BarChart3 } from "lucide-react";
+import { BiomassAccumulationChart } from "./BiomassAccumulationChart";
 
 interface HarvestResultsScreenProps {
   simulationData: SimulationApiData;
@@ -28,7 +28,12 @@ export function HarvestResultsScreen({ simulationData, config, onBack }: Harvest
 
   const biomassData = useMemo(() => {
     if (!simulationData?.daily_results?.length) return [];
-    return simulationData.daily_results.map(d => ({ day: d.day, biomass: d.biomass }));
+    return simulationData.daily_results.map(d => ({
+      day: d.day,
+      biomass: d.biomass,
+      delta_biomass: d.delta_biomass,
+      growth_stage: d.growth_stage,
+    }));
   }, [simulationData]);
 
   if (!hs) return null;
@@ -134,17 +139,26 @@ export function HarvestResultsScreen({ simulationData, config, onBack }: Harvest
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <Thermometer className="w-4 h-4 text-red-500" />
-                Stress Indicators
+                Average Stress Indicators
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-0">
-              <StatRow label="Average f(Water)" value={hs.avg_f_water.toFixed(4)} />
-              <StatRow label="Average f(Temp)" value={hs.avg_f_temp.toFixed(4)} />
-              <StatRow label="Average f(Heat)" value={hs.avg_f_heat.toFixed(4)} />
-              <StatRow label="Average f(CO2)" value={hs.avg_f_co2.toFixed(4)} />
+              <StatRow label="Water Stress" value={hs.avg_f_water.toFixed(4)} />
+              <StatRow label="Temperature Stress" value={hs.avg_f_temp.toFixed(4)} />
+              <StatRow label="Heat Stress" value={hs.avg_f_heat.toFixed(4)} />
+              <StatRow label="Nutrient Stress" value={hs.avg_f_nutrient.toFixed(4)} />
+              <StatRow label="Pest Stress" value={hs.avg_f_pest.toFixed(4)} />
               <div className="flex justify-between items-center py-1.5 mt-2 bg-red-50 rounded-lg px-3">
                 <span className="text-sm font-medium text-red-700">Dominant Stress Factor</span>
-                <span className="font-mono font-semibold text-red-800 text-sm">{hs.dominant_stress}</span>
+                <span className="font-mono font-semibold text-red-800 text-sm">
+                  {hs.dominant_stress
+                    .replace('(f_water)', '')
+                    .replace('(f_temp)', '')
+                    .replace('(f_heat)', '')
+                    .replace('(f_nutrient)', '')
+                    .replace('(f_pest)', '')
+                    .trim()}
+                </span>
               </div>
             </CardContent>
           </Card>
@@ -162,7 +176,7 @@ export function HarvestResultsScreen({ simulationData, config, onBack }: Harvest
             <div className="grid grid-cols-3 gap-x-8 gap-y-0">
               <StatRow label="Crop" value={getCropDisplayName(config.crop)} />
               <StatRow label="Scenario" value={config.scenario.replace(/_/g, " ").replace(/^\w/, c => c.toUpperCase())} />
-              <StatRow label="Soil Type" value={config.soil_type.replace(/_/g, " ").replace(/^\w/, c => c.toUpperCase())} />
+              <StatRow label="CO2" value={getCO2DisplayName(config.co2_level)} />
               <StatRow label="Initial Soil Moisture" value={`${(config.initial_moisture * 100).toFixed(0)}%`} />
               <StatRow label="Season" value={config.season === "wet_season" ? "Wet Season" : "Dry Season"} />
               <StatRow label="Planting Month" value={getMonthDisplayName(config.planting_month)} />
@@ -173,58 +187,13 @@ export function HarvestResultsScreen({ simulationData, config, onBack }: Harvest
           </CardContent>
         </Card>
 
-        {/* Biomass Graph */}
+        {/* Biomass Graph - Enhanced with dual-axis chart */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Biomass Growth Over Time</CardTitle>
+            <CardTitle className="text-base">Biomass Accumulation</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={biomassData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-                  <defs>
-                    <linearGradient id="harvestBiomassGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(122, 39%, 49%)" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="hsl(122, 39%, 49%)" stopOpacity={0.05} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(120, 10%, 88%)" vertical={false} />
-                  <XAxis
-                    dataKey="day"
-                    tick={{ fontSize: 11, fill: "hsl(120, 10%, 40%)" }}
-                    axisLine={{ stroke: "hsl(120, 10%, 88%)" }}
-                    tickLine={false}
-                    label={{ value: "Days", position: "insideBottom", offset: -5, fontSize: 11, fill: "hsl(120, 10%, 40%)" }}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 11, fill: "hsl(120, 10%, 40%)" }}
-                    axisLine={false}
-                    tickLine={false}
-                    label={{ value: "g/m²", angle: -90, position: "insideLeft", fontSize: 11, fill: "hsl(120, 10%, 40%)" }}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(0, 0%, 100%)",
-                      border: "1px solid hsl(120, 10%, 88%)",
-                      borderRadius: "12px",
-                      boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-                      padding: "12px",
-                    }}
-                    labelFormatter={(label) => `Day ${label}`}
-                    formatter={(value: number) => [`${value.toFixed(1)} g/m²`, "Biomass"]}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="biomass"
-                    stroke="hsl(122, 39%, 49%)"
-                    strokeWidth={2.5}
-                    fill="url(#harvestBiomassGradient)"
-                    dot={false}
-                    activeDot={{ r: 6, fill: "hsl(122, 39%, 49%)", stroke: "white", strokeWidth: 2 }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+            <BiomassAccumulationChart data={biomassData} />
           </CardContent>
         </Card>
       </div>

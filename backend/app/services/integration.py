@@ -142,10 +142,6 @@ def run_simulation(config: Dict[str, Any]) -> SimulationOutput:
     initial_paw = paw_max * initial_moisture
     initial_paw = max(0.0, min(paw_max, initial_paw))
 
-    # Drought scenario: start with only 30% of available water
-    if scenario == 'drought':
-        initial_paw = paw_max * 0.30
-
     crop_state = CropState(
         biomass=0.0,
         ttc=0.0,
@@ -391,12 +387,12 @@ def run_simulation(config: Dict[str, Any]) -> SimulationOutput:
         avg_f_nutrient = sum(d.f_nutrient for d in daily_results) / n
         avg_f_pest = sum(d.f_pest for d in daily_results) / n
 
-        # Dominant stress: the factor with the lowest average (most limiting)
+        # Dominant stress: choose the most limiting true stress factor only
+        # (exclude CO2 because it is a fertilization effect, not a stress).
         stress_map = {
             'Water (f_water)': avg_f_water,
             'Temperature (f_temp)': avg_f_temp,
             'Heat (f_heat)': avg_f_heat,
-            'CO2 (f_co2)': avg_f_co2,
             'Nutrient (f_nutrient)': avg_f_nutrient,
             'Pest (f_pest)': avg_f_pest,
         }

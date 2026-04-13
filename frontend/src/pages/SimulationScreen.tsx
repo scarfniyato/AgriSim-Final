@@ -13,7 +13,6 @@ import { SimulationApiData, SimulationConfig, DailySimulationResult } from "@/li
 import { getCropDisplayName, getLocationDisplayName, getCO2DisplayName, getMonthDisplayName } from "@/lib/utils";
 import { HarvestResultsScreen } from "@/components/simulation/HarvestResultsScreen";
 import { toast } from "sonner";
-import { apiUrl } from "@/lib/api";
 
 // ---------------------------------------------------------------------------
 // Helpers to derive UI state from backend DailySimulationResult
@@ -26,6 +25,7 @@ function mapGrowthStageToVisual(stage: string): string {
     emergence:     "Emergence",
     seedling:      "Seedling",
     vegetative:    "Vegetative",
+    reproductive:  "Reproductive",
     flowering:     "Flowering",
     grain_filling: "Grain Filling",
     fruit_set:     "Fruit Set",
@@ -137,11 +137,6 @@ export default function SimulationScreen() {
         return prev + 1;
       });
 
-      // Random pest population growth
-      setPestLevel(prev => {
-        const growth = Math.random() > 0.7 ? Math.random() * 2 : 0;
-        return Math.min(100, prev + growth);
-      });
     }, 1000 / parseFloat(speed));
 
     return () => clearInterval(interval);
@@ -167,7 +162,6 @@ export default function SimulationScreen() {
   const handleStop = useCallback(() => {
     setIsRunning(false);
     setCurrentDay(1);
-    setPestLevel(15);
     setOverlayAlerts([]);
   }, []);
 
@@ -204,7 +198,7 @@ export default function SimulationScreen() {
       pesticide_schedule: pesticideSchedule,
     };
 
-    fetch(apiUrl('/simulate'), {
+    fetch('/api/simulate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -247,7 +241,7 @@ export default function SimulationScreen() {
       pesticide_schedule: updatedSchedule,
     };
 
-    fetch(apiUrl('/simulate'), {
+    fetch('/api/simulate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -322,16 +316,8 @@ export default function SimulationScreen() {
             </div>
             <div className="w-px h-4 bg-border" />
             <div className="flex items-center gap-2 flex-shrink-0">
-              <span className="text-muted-foreground">Soil Type:</span>
-              <span className="font-semibold text-foreground">{config.soil_type.replace(/_/g, ' ').replace(/^\w/, c => c.toUpperCase())}</span>
-            </div>
-            <div className="w-px h-4 bg-border" />
-            <div className="flex items-center gap-2 flex-shrink-0">
               <span className="text-muted-foreground">CO2:</span>
               <span className="font-semibold text-foreground">{getCO2DisplayName(config.co2_level)}</span>
-              {simulationData?.co2_ppm != null && (
-                <span className="text-xs text-muted-foreground">({simulationData.co2_ppm} ppm)</span>
-              )}
             </div>
             <div className="w-px h-4 bg-border" />
             <div className="flex items-center gap-2 flex-shrink-0">

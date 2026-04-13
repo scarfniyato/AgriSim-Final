@@ -33,7 +33,7 @@ LAYER2_RULES = [
         "action_type": "Irrigate",
         "severity": "Severe",
         "condition": lambda state: 0.1 <= state["f_water"] < 0.3,
-        "additional_condition": lambda state: state["growth_stage"] == "flowering",
+        "additional_condition": lambda state: state["growth_stage"] in ["flowering", "reproductive"],
         "recommendation": "Apply irrigation immediately. Severe water stress during flowering carries a high risk of yield loss. Restoring soil moisture may help protect pollination and yield formation.",
         "basis": "Zhao et al. (2019) — fWater severe threshold; DA RFO 02 Production Guides — irrigation critical at reproductive stage"
     },
@@ -53,7 +53,7 @@ LAYER2_RULES = [
         "action_type": "Irrigate",
         "severity": "Moderate",
         "condition": lambda state: 0.3 <= state["f_water"] < 0.6,
-        "additional_condition": lambda state: state["growth_stage"] == "flowering",
+        "additional_condition": lambda state: state["growth_stage"] in ["flowering", "reproductive"],
         "recommendation": "Apply supplemental irrigation. Moderate water stress at the flowering stage may reduce pollination success and yield formation.",
         "basis": "Zhao et al. (2019) — fWater moderate threshold; DA RFO 02 Production Guides — irrigation at reproductive stage"
     },
@@ -73,7 +73,7 @@ LAYER2_RULES = [
         "action_type": "Irrigate",
         "severity": "Low",
         "condition": lambda state: 0.6 <= state["f_water"] < 0.8,
-        "additional_condition": lambda state: state["growth_stage"] == "flowering",
+        "additional_condition": lambda state: state["growth_stage"] in ["flowering", "reproductive"],
         "recommendation": "Apply light irrigation. Even mild moisture stress at the flowering stage can affect pollination efficiency.",
         "basis": "Zhao et al. (2019) — fWater low stress threshold; DA RFO 02 Production Guides — irrigation at reproductive stage"
     },
@@ -106,7 +106,7 @@ LAYER2_RULES = [
         "action_type": "Spray",
         "severity": "Moderate",
         "condition": lambda state: 0.55 < state["f_pest"] <= 0.75,
-        "additional_condition": lambda state: state["growth_stage"] in ["seedling", "flowering"],
+        "additional_condition": lambda state: state["growth_stage"] in ["seedling", "flowering", "reproductive"],
         "recommendation": "Apply pesticide. Moderate pest pressure at a sensitive growth stage may significantly affect crop establishment or reproduction.",
         "basis": "Oerke (2006) — 25% yield loss; DA Production Guides — cutworm/aphid at seedling; fruitworm/earworm at flowering"
     },
@@ -129,7 +129,7 @@ LAYER2_RULES = [
         "action_type": "Irrigate",
         "severity": "Severe",
         "condition": lambda state: state.get("crop_name", "") == "Sweet Corn" and state["f_water"] < 0.6,
-        "additional_condition": lambda state: state["growth_stage"] == "flowering",
+        "additional_condition": lambda state: state["growth_stage"] in ["flowering", "reproductive"],
         "recommendation": "Apply irrigation immediately. Tasseling and silking are the most water-sensitive stages for sweet corn. Water stress may reduce pollination and ear development.",
         "basis": "DA RFO 02 Corn Production Guide — 'Irrigation is important during the reproductive stage to ensure flower and silk synchronization, pollination and ear development. Irrigation may be applied through flushing or overhead method.'"
     },
@@ -139,7 +139,7 @@ LAYER2_RULES = [
         "action_type": "Irrigate",
         "severity": "Moderate",
         "condition": lambda state: state.get("crop_name", "") == "Sweet Corn" and 0.6 <= state["f_water"] < 0.8,
-        "additional_condition": lambda state: state["growth_stage"] == "flowering",
+        "additional_condition": lambda state: state["growth_stage"] in ["flowering", "reproductive"],
         "recommendation": "Apply supplemental irrigation to maintain adequate soil moisture during tasseling and silking.",
         "basis": "DA RFO 02 Corn Production Guide — irrigation management during reproductive stage"
     },
@@ -159,7 +159,7 @@ LAYER2_RULES = [
         "action_type": "Spray",
         "severity": "Severe",
         "condition": lambda state: state.get("crop_name", "") == "Sweet Corn" and 0.30 < state["f_pest"] <= 0.55,
-        "additional_condition": lambda state: state["growth_stage"] == "flowering" and state.get("days_since_spray", 0) >= 7,
+        "additional_condition": lambda state: state["growth_stage"] in ["flowering", "reproductive"] and state.get("days_since_spray", 0) >= 7,
         "recommendation": "Apply pesticide immediately. Corn borer and earworm damage during flowering directly affects pollination and ear formation.",
         "basis": "DA RFO 02 Corn Production Guide — corn borer: 'partial destruction of cobs', 'dropping of ears in severe cases'; earworm: 'cut silk and hole at opening of ears from silking to soft dough stage'"
     },
@@ -192,7 +192,7 @@ LAYER2_RULES = [
         "action_type": "Irrigate",
         "severity": "Severe",
         "condition": lambda state: state.get("crop_name", "") == "Tomato" and state["f_water"] < 0.6,
-        "additional_condition": lambda state: state["growth_stage"] == "flowering",
+        "additional_condition": lambda state: state["growth_stage"] in ["flowering", "reproductive"],
         "recommendation": "Apply irrigation immediately. Severe water deficit during flowering increases the risk of flower drop and poor fruit set.",
         "basis": "DA RFO 02 Tomato Production Guide (2017) — 'Water or irrigate the plants just to moisten the root zone especially during the onset of flowering up to the last harvest.'"
     },
@@ -202,7 +202,7 @@ LAYER2_RULES = [
         "action_type": "Irrigate",
         "severity": "Moderate",
         "condition": lambda state: state.get("crop_name", "") == "Tomato" and 0.6 <= state["f_water"] < 0.8,
-        "additional_condition": lambda state: state["growth_stage"] == "flowering",
+        "additional_condition": lambda state: state["growth_stage"] in ["flowering", "reproductive"],
         "recommendation": "Apply supplemental irrigation. Tomatoes are sensitive to moisture fluctuations during flowering.",
         "basis": "DA RFO 02 Tomato Production Guide (2017) — irrigation at onset of flowering through last harvest"
     },
@@ -212,7 +212,7 @@ LAYER2_RULES = [
         "action_type": "Spray",
         "severity": "Moderate",
         "condition": lambda state: state.get("crop_name", "") == "Tomato" and state["f_pest"] == 0.75,
-        "additional_condition": lambda state: state["growth_stage"] in ["flowering", "seedling"],
+        "additional_condition": lambda state: state["growth_stage"] in ["flowering", "reproductive", "seedling"],
         "recommendation": "Apply pest control when necessary to manage thrips, whiteflies, aphids, leaf miners, cutworms, and fruitworms.",
         "basis": "DA RFO 02 Tomato Production Guide (2017) — 'Common pests of tomato are thrips, whiteflies, melon fly, leaf miner, aphids, cutworm and fruitworm.'"
     },
@@ -255,7 +255,7 @@ LAYER2_RULES = [
         "action_type": "Irrigate",
         "severity": "Moderate",
         "condition": lambda state: state.get("crop_name", "") == "Carrot" and state["f_water"] < 0.6,
-        "additional_condition": lambda state: state["growth_stage"] == "flowering",
+        "additional_condition": lambda state: state["growth_stage"] in ["flowering", "reproductive"],
         "recommendation": "Apply supplemental irrigation. Water stress during root enlargement may reduce root size and marketable yield.",
         "basis": "DA RFO 02 Carrot Production Guide (2017) — irrigation management during root development"
     },

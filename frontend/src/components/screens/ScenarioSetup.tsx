@@ -41,6 +41,7 @@ const ALL_MONTHS: MonthId[] = [
   'january', 'february', 'march', 'april', 'may', 'june',
   'july', 'august', 'september', 'october', 'november', 'december',
 ];
+const DEFAULT_CROP: CropId = 'sweet_corn';
 
 function getSeasonFromMonth(month: MonthId): SeasonId {
   return WET_SEASON_MONTHS.includes(month) ? 'wet_season' : 'dry_season';
@@ -48,8 +49,8 @@ function getSeasonFromMonth(month: MonthId): SeasonId {
 
 export default function ScenarioSetup() {
   const navigate = useNavigate();
-  const [selectedCrop, setSelectedCrop] = useState<CropId>('sweet_corn');
-  const [selectedLocation, setSelectedLocation] = useState<LocationId>('baguio_benguet');
+  const [selectedCrop, setSelectedCrop] = useState<CropId>(DEFAULT_CROP);
+  const [selectedLocation, setSelectedLocation] = useState<LocationId>(RECOMMENDED_LOCATION_BY_CROP[DEFAULT_CROP]);
   const [selectedMonth, setSelectedMonth] = useState<MonthId>('june');
   const [initialMoisture, setInitialMoisture] = useState(50);
   const [selectedScenario, setSelectedScenario] = useState<ScenarioId>('baseline');

@@ -4,13 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SimulationApiData, SimulationConfig } from "@/lib/types";
 import { getCO2DisplayName, getCropDisplayName, getLocationDisplayName, getMonthDisplayName } from "@/lib/utils";
-import { Wheat, Droplets, Sun, Thermometer, TrendingUp, ArrowLeft, Sprout, BarChart3 } from "lucide-react";
+import { Wheat, Droplets, Sun, Thermometer, TrendingUp, ArrowLeft, Sprout, BarChart3, Download } from "lucide-react";
 import { BiomassAccumulationChart } from "./BiomassAccumulationChart";
 
 interface HarvestResultsScreenProps {
   simulationData: SimulationApiData;
   config: SimulationConfig;
   onBack: () => void;
+  onExport: () => void;
 }
 
 function StatRow({ label, value }: { label: string; value: string | number }) {
@@ -22,7 +23,7 @@ function StatRow({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-export function HarvestResultsScreen({ simulationData, config, onBack }: HarvestResultsScreenProps) {
+export function HarvestResultsScreen({ simulationData, config, onBack, onExport }: HarvestResultsScreenProps) {
   const navigate = useNavigate();
   const hs = simulationData.harvest_summary;
 
@@ -55,6 +56,10 @@ export function HarvestResultsScreen({ simulationData, config, onBack }: Harvest
             </div>
           </div>
           <div className="flex gap-3">
+            <Button variant="default" onClick={onExport}>
+              <Download className="w-4 h-4 mr-2" />
+              Export Results
+            </Button>
             <Button variant="outline" onClick={onBack}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Simulation

@@ -13,6 +13,7 @@ import { SimulationApiData, SimulationConfig, DailySimulationResult } from "@/li
 import { getCropDisplayName, getLocationDisplayName, getCO2DisplayName, getMonthDisplayName } from "@/lib/utils";
 import { HarvestResultsScreen } from "@/components/simulation/HarvestResultsScreen";
 import { toast } from "sonner";
+import { exportSimulationBundle } from "@/lib/export";
 
 // ---------------------------------------------------------------------------
 // Helpers to derive UI state from backend DailySimulationResult
@@ -262,6 +263,24 @@ export default function SimulationScreen() {
       });
   }, [config, currentDay, irrigationSchedule, pesticideSchedule, isResimulating, triggerEffect]);
 
+  const handleExportResults = useCallback(() => {
+    if (!config || !simulationData) {
+      toast.error("No simulation data available to export yet.");
+      return;
+    }
+
+    const files = exportSimulationBundle({
+      config,
+      simulationData,
+      irrigationSchedule,
+      pesticideSchedule,
+    });
+
+    toast.success("Simulation export created", {
+      description: `${files.csvFile} downloaded`,
+    });
+  }, [config, simulationData, irrigationSchedule, pesticideSchedule]);
+
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
@@ -273,6 +292,7 @@ export default function SimulationScreen() {
         simulationData={simulationData}
         config={config}
         onBack={() => setShowHarvestResults(false)}
+        onExport={handleExportResults}
       />
     );
   }

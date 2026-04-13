@@ -572,7 +572,7 @@ def compute_stress_factors(
     STAGE_SUSCEPTIBILITY = {
         'seedling': 'high',        # Vulnerable to cutworms, damping-off
         'vegetative': 'medium',    # Leaf feeders, aphids
-        'flowering': 'high',       # Fruit/flower pests, diseases
+        'reproductive': 'high',       # Fruit/flower pests, diseases
         'maturity': 'low',         # Less yield-critical
     }
 
@@ -581,7 +581,7 @@ def compute_stress_factors(
         'none': 1.00,      # No biotic stress
         'low': 0.92,       # 8% yield reduction
         'moderate': 0.75,  # 25% yield reduction (Oerke 2006 mid-range)
-        'high': 0.55,      # 45% yield reduction
+        'high': 0.65,      # 45% yield reduction
         'severe': 0.30,    # 70% yield reduction (unmanaged)
     }
 

@@ -33,7 +33,7 @@ class CropState:
     """Today's canopy solar radiation interception fraction (0-1)."""
 
     growth_stage: str = "pre_emergence"
-    """Current growth stage key (matches gdd_stages keys in crop_parameters.json)."""
+    """Current growth stage key computed from SIMPLE stage thresholds."""
 
     is_mature: bool = False
     """True once cumulative TTc >= T_sum (crop has reached physiological maturity)."""

@@ -1,13 +1,22 @@
 import { useState } from 'react';
-import { ArrowLeft, X, Rocket, Check } from 'lucide-react';
+import { ArrowLeft, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { SimulationConfig, SimulationApiData, CropId, LocationId, SeasonId, ScenarioId, CO2LevelId, FertilizerLevelId, MonthId } from '@/lib/types';
-import { getCropDisplayName, getCropScientificName, getCropBaseEmoji, getLocationDisplayName, getCO2DisplayName, getMonthDisplayName, cn } from '@/lib/utils';
-import { apiUrl } from '@/lib/api';
+import { getCropDisplayName, getCropScientificName, getCropBaseEmoji, getLocationDisplayName, getMonthDisplayName, cn } from '@/lib/utils';
 
 const CROPS: CropId[] = ['sweet_corn', 'carrot', 'tomato'];
 const LOCATIONS: LocationId[] = ['baguio_benguet', 'malaybalay_bukidnon', 'tuguegarao_cagayan'];
+const RECOMMENDED_LOCATION_BY_CROP: Record<CropId, LocationId> = {
+  sweet_corn: 'tuguegarao_cagayan',
+  tomato: 'malaybalay_bukidnon',
+  carrot: 'baguio_benguet',
+};
+const RECOMMENDED_STATION_LABEL_BY_CROP: Record<CropId, string> = {
+  sweet_corn: 'Tuguegarao',
+  tomato: 'Malaybalay',
+  carrot: 'Baguio',
+};
 const SCENARIOS: { id: ScenarioId; name: string; description: string }[] = [
   { id: 'baseline', name: 'Recommended Practices (Baseline)', description: 'Standard agricultural practices with optimal management' },
   { id: 'drought', name: 'Drought Stress Scenario', description: 'Simulates extended dry periods and water scarcity' },
@@ -28,17 +37,44 @@ const CO2_LEVELS: { id: CO2LevelId; name: string; description: string }[] = [
 
 const WET_SEASON_MONTHS: MonthId[] = ['june', 'july', 'august', 'september', 'october', 'november'];
 const DRY_SEASON_MONTHS: MonthId[] = ['december', 'january', 'february', 'march', 'april', 'may'];
+const ALL_MONTHS: MonthId[] = [
+  'january', 'february', 'march', 'april', 'may', 'june',
+  'july', 'august', 'september', 'october', 'november', 'december',
+];
+
+function getSeasonFromMonth(month: MonthId): SeasonId {
+  return WET_SEASON_MONTHS.includes(month) ? 'wet_season' : 'dry_season';
+}
 
 export default function ScenarioSetup() {
   const navigate = useNavigate();
   const [selectedCrop, setSelectedCrop] = useState<CropId>('sweet_corn');
   const [selectedLocation, setSelectedLocation] = useState<LocationId>('baguio_benguet');
-  const [selectedSeason, setSelectedSeason] = useState<SeasonId>('wet_season');
   const [selectedMonth, setSelectedMonth] = useState<MonthId>('june');
   const [initialMoisture, setInitialMoisture] = useState(50);
   const [selectedScenario, setSelectedScenario] = useState<ScenarioId>('baseline');
-  const [selectedCO2, setSelectedCO2] = useState<CO2LevelId>('medium');
+  const [selectedCO2, setSelectedCO2] = useState<CO2LevelId>('low');
   const [selectedFertilizer, setSelectedFertilizer] = useState<FertilizerLevelId>('recommended');
+  const selectedSeason = getSeasonFromMonth(selectedMonth);
+
+  const handleCropSelect = (cropId: CropId) => {
+    setSelectedCrop(cropId);
+    setSelectedLocation(RECOMMENDED_LOCATION_BY_CROP[cropId]);
+  };
+
+  const handleScenarioSelect = (scenarioId: ScenarioId) => {
+    setSelectedScenario(scenarioId);
+
+    if (scenarioId === 'baseline') {
+      setInitialMoisture(50);
+      setSelectedFertilizer('recommended');
+      setSelectedCO2('low');
+    }
+
+    if (scenarioId === 'nutrient') {
+      setSelectedFertilizer('none');
+    }
+  };
   
   // Handles "Start Simulation": builds config, calls backend simulation API, then routes to SimulationScreen.
   const handleStart = async () => {
@@ -58,7 +94,7 @@ export default function ScenarioSetup() {
 
     try {
       // 2) Call backend simulate API using the full config expected by routes.py.
-      const response = await fetch(apiUrl('/simulate'), {
+      const response = await fetch('/api/simulate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -130,7 +166,7 @@ export default function ScenarioSetup() {
             {CROPS.map((cropId) => (
               <button
                 key={cropId}
-                onClick={() => setSelectedCrop(cropId)}
+                onClick={() => handleCropSelect(cropId)}
                 className={cn(
                   "relative p-6 rounded-xl border-2 transition-all duration-200 hover:shadow-md",
                   selectedCrop === cropId
@@ -160,7 +196,7 @@ export default function ScenarioSetup() {
           </h2>
           <hr className="border-border mb-4" />
           
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">Weather Station</label>
               <select
@@ -172,29 +208,11 @@ export default function ScenarioSetup() {
                   <option key={loc} value={loc}>{getLocationDisplayName(loc)}</option>
                 ))}
               </select>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Recommended station for {getCropDisplayName(selectedCrop)}: {RECOMMENDED_STATION_LABEL_BY_CROP[selectedCrop]}
+              </p>
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Growing Season</label>
-              <select
-                value={selectedSeason}
-                onChange={(e) => {
-                  setSelectedSeason(e.target.value as SeasonId);
-                  // Reset month to first month of selected season
-                  if (e.target.value === 'wet_season') {
-                    setSelectedMonth('june');
-                  } else {
-                    setSelectedMonth('december');
-                  }
-                }}
-                className="w-full px-4 py-3 border border-border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-primary focus:border-primary transition-all"
-              >
-                <option value="wet_season">Wet Season (June - November)</option>
-                <option value="dry_season">Dry Season (December - May)</option>
-              </select>
-            </div>
-
-            {/* Planting Month - shown for both columns */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">Planting Month</label>
               <select
@@ -202,15 +220,13 @@ export default function ScenarioSetup() {
                 onChange={(e) => setSelectedMonth(e.target.value as MonthId)}
                 className="w-full px-4 py-3 border border-border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-primary focus:border-primary transition-all"
               >
-                {selectedSeason === 'wet_season' 
-                  ? WET_SEASON_MONTHS.map((month) => (
-                      <option key={month} value={month}>{getMonthDisplayName(month)}</option>
-                    ))
-                  : DRY_SEASON_MONTHS.map((month) => (
-                      <option key={month} value={month}>{getMonthDisplayName(month)}</option>
-                    ))
-                }
+                {ALL_MONTHS.map((month) => (
+                  <option key={month} value={month}>{getMonthDisplayName(month)}</option>
+                ))}
               </select>
+              <p className="mt-2 text-xs text-muted-foreground">
+                {selectedSeason === 'wet_season' ? 'Wet' : 'Dry'} Season (based on planting month)
+              </p>
             </div>
           </div>
         </div>
@@ -309,7 +325,7 @@ export default function ScenarioSetup() {
               {SCENARIOS.map((scenario) => (
                 <button
                   key={scenario.id}
-                  onClick={() => setSelectedScenario(scenario.id)}
+                  onClick={() => handleScenarioSelect(scenario.id)}
                   className={cn(
                     "w-full text-left p-4 rounded-lg border-2 transition-all duration-200",
                     selectedScenario === scenario.id

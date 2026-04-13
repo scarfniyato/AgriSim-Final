@@ -42,6 +42,7 @@ SCENARIO_WEATHER_MODIFIERS: Dict[str, Dict[str, float]] = {
     'heat':      {'tmax_offset': 4.0, 'tmin_offset': 2.0, 'rainfall_multiplier': 1.0},
     'nutrient':  {'tmax_offset': 0.0, 'tmin_offset': 0.0, 'rainfall_multiplier': 1.0},
 }
+SCENARIOS_START_AT_VEGETATIVE = {'drought', 'heat', 'nutrient'}
 
 CO2_PPM: Dict[str, float] = {
     'low':    350.0,
@@ -96,7 +97,15 @@ def step_day(
     # ------------------------------------------------------------------
     # 1. Apply scenario modifiers to today's raw weather
     # ------------------------------------------------------------------
-    mod = SCENARIO_WEATHER_MODIFIERS.get(scenario, SCENARIO_WEATHER_MODIFIERS['baseline'])
+    # Delay stress scenarios until vegetative stage (TTc >= I50A).
+    # Before this threshold, weather stays at baseline.
+    i_50a = crop_params['canopy']['i_50a']
+    scenario_is_active = (
+        scenario in SCENARIOS_START_AT_VEGETATIVE and
+        crop_state.ttc >= i_50a
+    )
+    active_scenario = scenario if scenario_is_active else 'baseline'
+    mod = SCENARIO_WEATHER_MODIFIERS.get(active_scenario, SCENARIO_WEATHER_MODIFIERS['baseline'])
     tmax = weather['tmax'] + mod['tmax_offset']
     tmin = weather['tmin'] + mod['tmin_offset']
     tmin = min(tmin, tmax - 0.5)       # ensure physical consistency
@@ -263,7 +272,6 @@ def step_day(
     #        fSolar = fSolarMax / (1 + exp(+0.01 * (TTc - (Tsum - I50B_dynamic))))
     # ------------------------------------------------------------------
     f_solar_max = crop_params['radiation']['f_solar_max']
-    i_50a       = crop_params['canopy']['i_50a']          # fixed cultivar param
     t_sum       = crop_params['phenology']['t_sum']
 
     senescence_threshold = t_sum - crop_state.i_50b      # uses DYNAMIC I50B
@@ -314,10 +322,18 @@ def step_day(
     crop_state.biomass += delta_biomass
 
     # ------------------------------------------------------------------
-    # 11. Growth stage from cumulative GDD thresholds
+    # 11. Growth stage from SIMPLE crop growth cycle thresholds
+    #     Section H logic:
+    #       TT < i50a                      -> seedling
+    #       i50a <= TT < (Tsum - i50b)     -> vegetative
+    #       (Tsum - i50b) <= TT < Tsum     -> reproductive
+    #       TT >= Tsum                     -> maturity
     # ------------------------------------------------------------------
     crop_state.growth_stage = _determine_growth_stage(
-        crop_state.ttc, crop_params['gdd_stages']
+        ttc=crop_state.ttc,
+        t_sum=t_sum,
+        i_50a=i_50a,
+        i_50b=crop_state.i_50b,
     )
 
     # ------------------------------------------------------------------
@@ -372,6 +388,7 @@ _STAGE_LABELS = {
     'emergence':     'Emergence',
     'seedling':      'Seedling',
     'vegetative':    'Vegetative',
+    'reproductive':  'Reproductive',
     'flowering':     'Flowering',
     'grain_filling': 'Grain Filling',
     'fruit_set':     'Fruit Set',
@@ -385,19 +402,17 @@ def _stage_label(key: str) -> str:
     return _STAGE_LABELS.get(key, key.replace('_', ' ').title())
 
 
-def _determine_growth_stage(ttc: float, gdd_stages: Dict[str, Any]) -> str:
-    """Return the current growth stage key based on cumulative TTc."""
-    thresholds = {
-        k: v for k, v in gdd_stages.items()
-        if not k.startswith('_') and isinstance(v, (int, float))
-    }
-    current = 'pre_emergence'
-    for stage_key, threshold in sorted(thresholds.items(), key=lambda x: x[1]):
-        if ttc >= threshold:
-            current = stage_key
-        else:
-            break
-    return current
+def _determine_growth_stage(ttc: float, t_sum: float, i_50a: float, i_50b: float) -> str:
+    """Return growth stage using Section H crop-cycle thresholds."""
+    reproductive_start = t_sum - i_50b
+
+    if ttc < i_50a:
+        return 'seedling'
+    if ttc < reproductive_start:
+        return 'vegetative'
+    if ttc < t_sum:
+        return 'reproductive'
+    return 'maturity'
 
 
 def compute_yield(crop_state: CropState, crop_params: Dict[str, Any]) -> Tuple[float, float]:

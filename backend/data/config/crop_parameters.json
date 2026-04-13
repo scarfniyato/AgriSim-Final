@@ -20,8 +20,7 @@
       "co2_reference":"ppm — reference CO2 concentration where fCO2 = 1.0",
       "co2_saturation":"ppm — CO2 at which fCO2 saturates: fCO2 = 1 + s_co2 × (co2_saturation - 350)",
       "stop_mode":   "'maturity' — simulation runs until TTc >= T_sum (crop reaches physiological maturity). No fixed day count.",
-      "max_days_safety": "days — hard safety cap to prevent infinite runs. If maturity not reached by this day, sim stops and a warning is shown.",
-      "gdd_stages":  "°C·d cumulative TT thresholds for each growth stage (proportional to T_sum; verify with field records)"
+      "max_days_safety": "days — hard safety cap to prevent infinite runs. If maturity not reached by this day, sim stops and a warning is shown."
     },
     "fTemp_equation":   "fTemp = 0 if Tmean < T_base; (Tmean-T_base)/(T_opt-T_base) if T_base <= Tmean < T_opt; 1.0 if Tmean >= T_opt",
     "fHeat_equation":   "fHeat = 1 if Tmax <= T_heat_onset; 1-(Tmax-T_heat_onset)/(T_extreme-T_heat_onset) if T_heat_onset < Tmax < T_extreme; 0 if Tmax >= T_extreme",
@@ -85,15 +84,7 @@
     },
 
     "co2_reference": 350,
-    "co2_saturation": 700,
-
-    "gdd_stages": {
-      "_note": "Proportional to T_sum=1900. Verify against GSS0966 field records.",
-      "seedling": 0,
-      "vegetative":    475,
-      "flowering":     950,
-      "maturity": 1900
-    }
+    "co2_saturation": 700
   },
 
   "tomato": {
@@ -148,15 +139,7 @@
     },
 
     "co2_reference": 350,
-    "co2_saturation": 700,
-
-    "gdd_stages": {
-      "_note": "Proportional to T_sum=2300. Tomato stages scaled from document page 2 example. Verify against Agriset761 field data.",
-      "seedling": 0,
-      "vegetative":    805,
-      "flowering":     1472,
-      "maturity": 2300
-    }
+    "co2_saturation": 700
   },
 
   "carrot": {
@@ -211,14 +194,6 @@
     },
 
     "co2_reference": 350,
-    "co2_saturation": 700,
-
-    "gdd_stages": {
-      "_note": "Proportional to T_sum=2450. Verify against Kazan F1 field records in Philippines highlands.",
-      "seedling": 0,
-      "vegetative":    735,
-      "root_bulking":  1225,
-      "maturity": 2450
-    }
+    "co2_saturation": 700
   }
 }

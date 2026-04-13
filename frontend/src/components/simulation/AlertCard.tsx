@@ -51,6 +51,7 @@ export function AlertCard({ dayResult, overlayAlerts }: AlertCardProps) {
 
   const extraCount = additionalAlerts.length + otherActions.length + overlayAlerts.length;
   const hasDetails = Boolean(primaryAlert || bestAction || additionalAlerts.length || otherActions.length || overlayAlerts.length);
+  const noActiveAlerts = !hasDetails;
 
   return (
     <div
@@ -66,9 +67,9 @@ export function AlertCard({ dayResult, overlayAlerts }: AlertCardProps) {
             <Lightbulb className="w-4 h-4" />
             Expert System Alert
           </h3>
-          {!dayResult && overlayAlerts.length === 0 && (
+          {noActiveAlerts && (
             <p className="mt-2 text-sm text-alert-text/80">
-              All conditions are optimal. Crop is developing normally.
+              No Active Alerts
             </p>
           )}
         </div>

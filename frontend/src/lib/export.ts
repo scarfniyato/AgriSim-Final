@@ -109,6 +109,18 @@ function buildDailyCsvRows(results: DailySimulationResult[]): string[] {
   return lines;
 }
 
+function buildSummaryRows(simulationData: SimulationApiData): string[] {
+  const finalYield = simulationData.yield_estimate_t_ha;
+  const finalBiomass = simulationData.total_biomass_g_m2;
+
+  return [
+    "",
+    "summary_metric,summary_value",
+    `final_yield_t_ha,${csvEscape(finalYield ?? "N/A")}`,
+    `final_biomass_g_m2,${csvEscape(finalBiomass ?? "N/A")}`,
+  ];
+}
+
 function downloadTextFile(filename: string, content: string, mimeType: string): void {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
@@ -127,7 +139,11 @@ export function exportSimulationBundle(input: ExportBundleInput): { csvFile: str
   const locationPart = sanitizeFilePart(input.config.location);
   const baseName = `simulation_${cropPart}_${locationPart}_${timestamp}`;
   const csvFile = `${baseName}_daily.csv`;
-  const csvContent = buildDailyCsvRows(input.simulationData.daily_results).join("\n");
+  const csvRows = [
+    ...buildDailyCsvRows(input.simulationData.daily_results),
+    ...buildSummaryRows(input.simulationData),
+  ];
+  const csvContent = csvRows.join("\n");
 
   downloadTextFile(csvFile, csvContent, "text/csv;charset=utf-8");
 

@@ -69,11 +69,11 @@ export function TimeControls({ onJump, speed, onSpeedChange }: TimeControlsProps
             <SelectValue placeholder="Speed" />
           </SelectTrigger>
           <SelectContent className="bg-card">
-            <SelectItem value="0.5">0.5x</SelectItem>
-            <SelectItem value="1">1x</SelectItem>
-            <SelectItem value="2">2x</SelectItem>
-            <SelectItem value="5">5x</SelectItem>
-            <SelectItem value="10">10x</SelectItem>
+            <SelectItem value="0.1">0.5x</SelectItem>
+            <SelectItem value="0.5">1x</SelectItem>
+            <SelectItem value="1">2x</SelectItem>
+            <SelectItem value="3">5x</SelectItem>
+            <SelectItem value="5">10x</SelectItem>
           </SelectContent>
         </Select>
       </div>

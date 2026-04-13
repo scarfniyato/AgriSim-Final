@@ -61,7 +61,7 @@ export default function SimulationScreen() {
   // Playback state
   const [isRunning, setIsRunning] = useState(true);
   const [currentDay, setCurrentDay] = useState(1);
-  const [speed, setSpeed] = useState("1");
+    const [speed, setSpeed] = useState("0.5");
   const [activeEffect, setActiveEffect] = useState<"water" | "fertilizer" | "pesticide" | null>(null);
   const [overlayAlerts, setOverlayAlerts] = useState<{ id: string; type: "info" | "warning" | "error" | "success"; message: string }[]>([]);
 
@@ -358,6 +358,7 @@ export default function SimulationScreen() {
               day={currentDay}
               activeEffect={activeEffect}
               pestLevel={pestLevel}
+              crop={config?.crop}
             />
             <FarmActions
               onWater={handleWater}

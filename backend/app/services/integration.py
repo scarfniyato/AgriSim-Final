@@ -22,7 +22,7 @@ with action payloads — and apply them before each daily step.
 import json
 import os
 from datetime import date, timedelta
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
 
 from app.models import CropState, SoilState, DailyOutput, SimulationOutput
 from app.services.weather import load_weather_window, priestley_taylor_eto
@@ -446,3 +446,74 @@ def run_simulation(config: Dict[str, Any]) -> SimulationOutput:
         harvest_summary=harvest_summary,
         daily_results=daily_results,
     )
+
+
+def run_skip_with_auto(
+    config: Dict[str, Any],
+    start_day: int,
+    end_day: int,
+    auto_irrigate_enabled: bool,
+    auto_pesticide_enabled: bool,
+    irrigation_mm: float,
+    water_threshold: float = 1.0,
+    pest_threshold: float = 0.92,
+) -> Tuple[SimulationOutput, Dict[str, float], list, Dict[str, int]]:
+    """
+    Process skipped-day auto-actions in backend with accurate day-by-day updates.
+
+    This keeps decision accuracy by re-simulating only when an action is added,
+    so each next-day decision uses updated stress values.
+
+    Returns
+    -------
+    (final_result, irrigation_schedule, pesticide_schedule, counts)
+    """
+    start_day = max(1, int(start_day))
+    end_day = max(start_day, int(end_day))
+    irrigation_mm = max(0.0, min(float(irrigation_mm), 200.0))
+
+    working_config = dict(config)
+    working_irrigation = {
+        str(int(k)): float(v)
+        for k, v in (config.get('irrigation_schedule', {}) or {}).items()
+    }
+    working_pesticide = sorted({
+        int(d) for d in (config.get('pesticide_schedule', []) or []) if int(d) >= 1
+    })
+
+    working_config['irrigation_schedule'] = working_irrigation
+    working_config['pesticide_schedule'] = working_pesticide
+
+    result = run_simulation(working_config)
+
+    counts = {'irrigation': 0, 'pesticide': 0}
+
+    for day in range(start_day + 1, end_day + 1):
+        if day < 1 or day > len(result.daily_results):
+            break
+
+        day_result = result.daily_results[day - 1]
+        should_resimulate = False
+        day_key = str(day)
+
+        if auto_irrigate_enabled:
+            already_irrigated = working_irrigation.get(day_key, 0.0) > 0.0
+            if (not already_irrigated) and (day_result.f_water < water_threshold):
+                working_irrigation[day_key] = working_irrigation.get(day_key, 0.0) + irrigation_mm
+                counts['irrigation'] += 1
+                should_resimulate = True
+
+        if auto_pesticide_enabled:
+            already_sprayed = day in working_pesticide
+            if (not already_sprayed) and (day_result.f_pest < pest_threshold):
+                working_pesticide.append(day)
+                working_pesticide = sorted(set(working_pesticide))
+                counts['pesticide'] += 1
+                should_resimulate = True
+
+        if should_resimulate:
+            working_config['irrigation_schedule'] = working_irrigation
+            working_config['pesticide_schedule'] = working_pesticide
+            result = run_simulation(working_config)
+
+    return result, working_irrigation, working_pesticide, counts

@@ -55,6 +55,9 @@ export default function SimulationScreen() {
   // Track pesticide spray days: [day1, day2, ...]
   const [pesticideSchedule, setPesticideSchedule] = useState<number[]>([]);
   const [isResimulating, setIsResimulating] = useState(false);
+  const [irrigationMm, setIrrigationMm] = useState(20);
+  const [autoIrrigateEnabled, setAutoIrrigateEnabled] = useState(false);
+  const [autoPesticideEnabled, setAutoPesticideEnabled] = useState(false);
 
   // Total days is driven by backend result; fall back to 120 if not available
   const totalDays = simulationData?.days_simulated ?? 120;
@@ -166,9 +169,122 @@ export default function SimulationScreen() {
     setOverlayAlerts([]);
   }, []);
 
-  const handleJump = useCallback((days: number) => {
-    setCurrentDay(prev => Math.max(1, Math.min(totalDays, prev + days)));
-  }, [totalDays]);
+  const handleJump = useCallback(async (days: number) => {
+    const targetDay = Math.max(1, Math.min(totalDays, currentDay + days));
+
+    // Backward jump or no-op: just move cursor.
+    if (days <= 0 || targetDay <= currentDay) {
+      setCurrentDay(targetDay);
+      return;
+    }
+
+    const autoEnabled = autoIrrigateEnabled || autoPesticideEnabled;
+    if (isResimulating) {
+      toast.info("Please wait for the current re-simulation to finish before jumping days.");
+      return;
+    }
+
+    if (!autoEnabled || !config || !simulationData) {
+      setCurrentDay(targetDay);
+      return;
+    }
+
+    // Pause playback while processing skipped days, then restore.
+    const wasRunning = isRunning;
+    if (wasRunning) setIsRunning(false);
+
+    let workingData = simulationData;
+    const workingIrrigation: Record<string, number> = { ...irrigationSchedule };
+    let workingPesticide = [...pesticideSchedule];
+    let appliedIrrigationCount = 0;
+    let appliedPesticideCount = 0;
+    let performedResimulation = false;
+
+    try {
+      for (let day = currentDay + 1; day <= targetDay; day += 1) {
+        const dayResultForRule = workingData.daily_results?.[day - 1];
+        if (!dayResultForRule) break;
+
+        let shouldResimulate = false;
+        const dayKey = String(day);
+
+        if (autoIrrigateEnabled) {
+          const alreadyIrrigatedToday = (workingIrrigation[dayKey] ?? 0) > 0;
+          if (!alreadyIrrigatedToday && dayResultForRule.f_water < 1.0) {
+            workingIrrigation[dayKey] = (workingIrrigation[dayKey] ?? 0) + irrigationMm;
+            appliedIrrigationCount += 1;
+            shouldResimulate = true;
+          }
+        }
+
+        if (autoPesticideEnabled) {
+          const alreadySprayedToday = workingPesticide.includes(day);
+          if (!alreadySprayedToday && dayResultForRule.f_pest < 0.92) {
+            workingPesticide = [...workingPesticide, day];
+            appliedPesticideCount += 1;
+            shouldResimulate = true;
+          }
+        }
+
+        if (!shouldResimulate) continue;
+
+        if (!performedResimulation) {
+          setIsResimulating(true);
+          performedResimulation = true;
+        }
+
+        const payload = {
+          ...config,
+          irrigation_schedule: workingIrrigation,
+          pesticide_schedule: workingPesticide,
+        };
+
+        const res = await fetch('/api/simulate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+
+        const data: SimulationApiData = await res.json();
+        workingData = data;
+      }
+
+      setIrrigationSchedule(workingIrrigation);
+      setPesticideSchedule(workingPesticide);
+      if (performedResimulation) {
+        setSimulationData(workingData);
+      }
+      setCurrentDay(targetDay);
+
+      if (appliedIrrigationCount > 0 || appliedPesticideCount > 0) {
+        toast.success(
+          `Auto-actions applied while skipping to Day ${targetDay}`,
+          {
+            description: `Irrigation: ${appliedIrrigationCount}, Pesticide: ${appliedPesticideCount}`,
+          },
+        );
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      toast.error(`Jump processing failed: ${message}`);
+    } finally {
+      if (performedResimulation) setIsResimulating(false);
+      if (wasRunning) setIsRunning(true);
+    }
+  }, [
+    totalDays,
+    currentDay,
+    autoIrrigateEnabled,
+    autoPesticideEnabled,
+    config,
+    simulationData,
+    isResimulating,
+    isRunning,
+    irrigationSchedule,
+    pesticideSchedule,
+    irrigationMm,
+  ]);
 
   // ---------------------------------------------------------------------------
   // Farm actions — client-side interactive adjustments
@@ -178,18 +294,22 @@ export default function SimulationScreen() {
     setTimeout(() => setActiveEffect(null), 2000);
   }, []);
 
-  const handleWater = useCallback((mm: number) => {
+  const handleWater = useCallback((source: "manual" | "auto" = "manual") => {
     if (!config || isResimulating) return;
     triggerEffect("water");
 
     // Add this day's irrigation to the schedule
     const dayKey = String(currentDay);
+    const mm = irrigationMm;
     const updatedSchedule = { ...irrigationSchedule, [dayKey]: (irrigationSchedule[dayKey] ?? 0) + mm };
     setIrrigationSchedule(updatedSchedule);
 
-    toast.success(`Irrigation queued: ${mm} mm on Day ${currentDay}`, {
-      description: "Re-simulating with updated water balance...",
-    });
+    toast.success(
+      source === "auto"
+        ? `Auto-irrigation triggered: ${mm} mm on Day ${currentDay}`
+        : `Irrigation queued: ${mm} mm on Day ${currentDay}`,
+      { description: "Re-simulating with updated water balance..." },
+    );
 
     // Re-simulate with the updated irrigation schedule
     setIsResimulating(true);
@@ -210,7 +330,11 @@ export default function SimulationScreen() {
       })
       .then((data: SimulationApiData) => {
         setSimulationData(data);
-        toast.success(`Re-simulation complete! Irrigation of ${mm} mm applied on Day ${currentDay}.`);
+        toast.success(
+          source === "auto"
+            ? `Auto-irrigation complete for Day ${currentDay}.`
+            : `Re-simulation complete! Irrigation of ${mm} mm applied on Day ${currentDay}.`,
+        );
       })
       .catch(err => {
         toast.error(`Re-simulation failed: ${err.message}`);
@@ -218,9 +342,9 @@ export default function SimulationScreen() {
       .finally(() => {
         setIsResimulating(false);
       });
-  }, [config, currentDay, irrigationSchedule, pesticideSchedule, isResimulating, triggerEffect]);
+  }, [config, currentDay, irrigationMm, irrigationSchedule, pesticideSchedule, isResimulating, triggerEffect]);
 
-  const handleApplyPesticide = useCallback(() => {
+  const handleApplyPesticide = useCallback((source: "manual" | "auto" = "manual") => {
     if (!config || isResimulating) return;
     triggerEffect("pesticide");
 
@@ -230,9 +354,12 @@ export default function SimulationScreen() {
       : [...pesticideSchedule, currentDay];
     setPesticideSchedule(updatedSchedule);
 
-    toast.success(`Pesticide applied on Day ${currentDay}`, {
-      description: "Re-simulating with updated pest pressure...",
-    });
+    toast.success(
+      source === "auto"
+        ? `Auto-pesticide triggered on Day ${currentDay}`
+        : `Pesticide applied on Day ${currentDay}`,
+      { description: "Re-simulating with updated pest pressure..." },
+    );
 
     // Re-simulate with the updated pesticide schedule
     setIsResimulating(true);
@@ -253,7 +380,11 @@ export default function SimulationScreen() {
       })
       .then((data: SimulationApiData) => {
         setSimulationData(data);
-        toast.success(`Re-simulation complete! Pesticide applied on Day ${currentDay}.`);
+        toast.success(
+          source === "auto"
+            ? `Auto-pesticide complete for Day ${currentDay}.`
+            : `Re-simulation complete! Pesticide applied on Day ${currentDay}.`,
+        );
       })
       .catch(err => {
         toast.error(`Re-simulation failed: ${err.message}`);
@@ -262,6 +393,40 @@ export default function SimulationScreen() {
         setIsResimulating(false);
       });
   }, [config, currentDay, irrigationSchedule, pesticideSchedule, isResimulating, triggerEffect]);
+
+  useEffect(() => {
+    if (!isRunning || !dayResult || !config || isResimulating || isAtMaturity) return;
+
+    const dayKey = String(currentDay);
+
+    if (autoIrrigateEnabled) {
+      const alreadyIrrigatedToday = (irrigationSchedule[dayKey] ?? 0) > 0;
+      if (!alreadyIrrigatedToday && dayResult.f_water < 1.0) {
+        handleWater("auto");
+        return;
+      }
+    }
+
+    if (autoPesticideEnabled) {
+      const alreadySprayedToday = pesticideSchedule.includes(currentDay);
+      if (!alreadySprayedToday && dayResult.f_pest < 0.92) {
+        handleApplyPesticide("auto");
+      }
+    }
+  }, [
+    isRunning,
+    dayResult,
+    config,
+    isResimulating,
+    isAtMaturity,
+    currentDay,
+    irrigationSchedule,
+    pesticideSchedule,
+    autoIrrigateEnabled,
+    autoPesticideEnabled,
+    handleWater,
+    handleApplyPesticide,
+  ]);
 
   const handleExportResults = useCallback(() => {
     if (!config || !simulationData) {
@@ -381,8 +546,14 @@ export default function SimulationScreen() {
               crop={config?.crop}
             />
             <FarmActions
-              onWater={handleWater}
-              onApplyPesticide={handleApplyPesticide}
+              onWater={() => handleWater("manual")}
+              onApplyPesticide={() => handleApplyPesticide("manual")}
+              irrigationMm={irrigationMm}
+              onIrrigationMmChange={setIrrigationMm}
+              autoIrrigateEnabled={autoIrrigateEnabled}
+              onAutoIrrigateChange={setAutoIrrigateEnabled}
+              autoPesticideEnabled={autoPesticideEnabled}
+              onAutoPesticideChange={setAutoPesticideEnabled}
               soilMoisture={Math.round(soilMoisturePct)}
               pestLevel={pestLevel}
             />

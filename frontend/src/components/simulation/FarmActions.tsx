@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { Droplets, Bug } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
   TooltipContent,
@@ -10,8 +10,14 @@ import {
 } from "@/components/ui/tooltip";
 
 interface FarmActionsProps {
-  onWater: (mm: number) => void;
+  onWater: () => void;
   onApplyPesticide: () => void;
+  irrigationMm: number;
+  onIrrigationMmChange: (mm: number) => void;
+  autoIrrigateEnabled: boolean;
+  onAutoIrrigateChange: (enabled: boolean) => void;
+  autoPesticideEnabled: boolean;
+  onAutoPesticideChange: (enabled: boolean) => void;
   soilMoisture: number;
   pestLevel: number;
 }
@@ -19,11 +25,15 @@ interface FarmActionsProps {
 export function FarmActions({
   onWater,
   onApplyPesticide,
+  irrigationMm,
+  onIrrigationMmChange,
+  autoIrrigateEnabled,
+  onAutoIrrigateChange,
+  autoPesticideEnabled,
+  onAutoPesticideChange,
   soilMoisture,
   pestLevel,
 }: FarmActionsProps) {
-  const [irrigationMm, setIrrigationMm] = useState(20);
-
   return (
     <TooltipProvider>
       <div className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-10">
@@ -31,7 +41,7 @@ export function FarmActions({
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              onClick={() => onWater(irrigationMm)}
+              onClick={onWater}
               size="lg"
               className="w-14 h-14 rounded-xl bg-rain/90 hover:bg-rain text-white shadow-lg backdrop-blur-sm border-2 border-white/20 transition-all hover:scale-110 active:scale-95"
             >
@@ -63,7 +73,7 @@ export function FarmActions({
             value={irrigationMm}
             onChange={(e) => {
               const val = Math.max(1, Math.min(200, Number(e.target.value) || 1));
-              setIrrigationMm(val);
+              onIrrigationMmChange(val);
             }}
             className="w-14 h-7 text-xs text-center px-1 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
@@ -105,6 +115,31 @@ export function FarmActions({
             <p className="text-[10px] text-muted-foreground flex items-center gap-1">
               <Bug className="w-3 h-3 text-agri-brown-400" /> Pesticide
             </p>
+          </div>
+        </div>
+
+        {/* Auto Toggles */}
+        <div className="bg-card/90 backdrop-blur-sm rounded-lg px-3 py-2 border border-border/50 shadow-sm space-y-2 w-[188px]">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+            Auto Actions
+          </p>
+
+          <div className="flex items-center justify-between gap-3">
+            <label className="text-[11px] text-foreground">Auto-Irrigate</label>
+            <Switch
+              checked={autoIrrigateEnabled}
+              onCheckedChange={onAutoIrrigateChange}
+              aria-label="Toggle auto irrigate"
+            />
+          </div>
+
+          <div className="flex items-center justify-between gap-3">
+            <label className="text-[11px] text-foreground">Auto-Pesticide</label>
+            <Switch
+              checked={autoPesticideEnabled}
+              onCheckedChange={onAutoPesticideChange}
+              aria-label="Toggle auto apply pesticide"
+            />
           </div>
         </div>
       </div>

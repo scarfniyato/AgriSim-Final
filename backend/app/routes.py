@@ -30,7 +30,6 @@ def index():
             'crop':             'sweet_corn | tomato | carrot',
             'location':         'baguio_benguet | malaybalay_bukidnon | tuguegarao_cagayan',
             'planting_month':   'january ... december',
-            'soil_type':        'clay_loam | sandy_loam | loam',
             'scenario':         'baseline | drought | heat | nutrient',
             'co2_level':        'low | medium | high',
             'fertilizer_level': 'none | low | recommended | high',
@@ -82,7 +81,6 @@ def simulate():
       "crop":             "sweet_corn" | "tomato" | "carrot",
       "location":         "baguio_benguet" | "malaybalay_bukidnon" | "tuguegarao_cagayan",
       "planting_month":   "june",
-      "soil_type":        "clay_loam" | "sandy_loam" | "loam",
       "scenario":         "baseline" | "drought" | "heat" | "nutrient",
       "co2_level":        "low" | "medium" | "high",
       "fertilizer_level": "none" | "low" | "recommended" | "high",
@@ -95,7 +93,7 @@ def simulate():
     payload = request.get_json(silent=True) or {}
 
     # --- Required field validation ---
-    required = ['crop', 'location', 'planting_month', 'soil_type',
+    required = ['crop', 'location', 'planting_month',
                 'scenario', 'co2_level', 'fertilizer_level']
     missing = [f for f in required if not payload.get(f)]
     if missing:
@@ -108,10 +106,6 @@ def simulate():
     valid_locations = ['baguio_benguet', 'malaybalay_bukidnon', 'tuguegarao_cagayan']
     if payload['location'] not in valid_locations:
         return jsonify({'error': f"Invalid location. Must be one of: {valid_locations}"}), 400
-
-    valid_soils = ['clay_loam', 'sandy_loam', 'loam']
-    if payload['soil_type'] not in valid_soils:
-        return jsonify({'error': f"Invalid soil_type. Must be one of: {valid_soils}"}), 400
 
     valid_scenarios = ['baseline', 'drought', 'heat', 'nutrient']
     if payload['scenario'] not in valid_scenarios:

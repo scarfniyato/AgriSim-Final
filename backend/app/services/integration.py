@@ -46,6 +46,14 @@ def _load_json(filename: str) -> Dict[str, Any]:
 _CROP_PARAMS = _load_json('crop_parameters.json')
 _SOIL_PARAMS = _load_json('soil_parameters.json')
 
+# Crop-specific soil profiles from Table 1b (preferred when available).
+# These keys are expected to exist in soil_parameters.json.
+_CROP_SOIL_PROFILE_KEYS: Dict[str, str] = {
+    'sweet_corn': 'sweet_corn',
+    'tomato': 'tomato',
+    'carrot': 'carrot',
+}
+
 
 # ---------------------------------------------------------------------------
 # Station key mapping (frontend location ID → backend station key)
@@ -74,7 +82,6 @@ def run_simulation(config: Dict[str, Any]) -> SimulationOutput:
         station         : str  (backend station key; derived from location if absent)
         season          : str  ('wet_season' | 'dry_season')
         planting_month  : str  (e.g. 'june')
-        soil_type       : str  ('clay_loam' | 'sandy_loam' | 'loam')
         initial_moisture: float (0.0-1.0; fraction of available water capacity)
         scenario        : str  ('baseline' | 'drought' | 'heat' | 'nutrient')
         co2_level       : str  ('low' | 'medium' | 'high')
@@ -93,7 +100,6 @@ def run_simulation(config: Dict[str, Any]) -> SimulationOutput:
     station = config.get('station') or LOCATION_TO_STATION.get(location, '')
     planting_month = config['planting_month']
     season = config.get('season', 'dry_season')
-    soil_key = config['soil_type']
     scenario = config.get('scenario', 'baseline')
     co2_level = config.get('co2_level', 'medium')
     fertilizer_level = config.get('fertilizer_level', 'recommended')
@@ -102,11 +108,16 @@ def run_simulation(config: Dict[str, Any]) -> SimulationOutput:
 
     if crop_key not in _CROP_PARAMS:
         raise ValueError(f"Unknown crop: '{crop_key}'. Available: {list(_CROP_PARAMS)}")
-    if soil_key not in _SOIL_PARAMS:
-        raise ValueError(f"Unknown soil type: '{soil_key}'. Available: {list(_SOIL_PARAMS)}")
-
     crop_params = _CROP_PARAMS[crop_key]
-    soil_params = _SOIL_PARAMS[soil_key]
+    # Use crop-specific Table 1b profile (Sweet Corn/Tomato/Carrot).
+    crop_soil_key = _CROP_SOIL_PROFILE_KEYS.get(crop_key)
+    if not crop_soil_key or crop_soil_key not in _SOIL_PARAMS:
+        raise ValueError(
+            f"Missing crop soil profile for '{crop_key}'. "
+            f"Expected key '{crop_soil_key}' in soil_parameters.json"
+        )
+    soil_key = crop_soil_key
+    soil_params = _SOIL_PARAMS[crop_soil_key]
 
     # --------------- Stop mode: run until maturity, cap at safety limit ------
     # stop_mode = 'maturity' → simulate until TTc >= T_sum

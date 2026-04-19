@@ -251,6 +251,23 @@ def step_day(
     f_water = max(0.0, 1.0 - s_water * arid)
 
     # ------------------------------------------------------------------
+    # 7a. Determine growth stage FIRST (before computing stress factors)
+    #     This ensures that on the day maturity is reached, f_pest is set to 1.0
+    # ------------------------------------------------------------------
+    t_sum = crop_params['phenology']['t_sum']
+    i_50a = crop_params['canopy']['i_50a']
+    
+    # Get current i_50b (will be updated later for stress effects, but use current value for stage)
+    i_50b_current = crop_state.i_50b
+    
+    crop_state.growth_stage = _determine_growth_stage(
+        ttc=crop_state.ttc,
+        t_sum=t_sum,
+        i_50a=i_50a,
+        i_50b=i_50b_current,
+    )
+
+    # ------------------------------------------------------------------
     # 7b. Nutrient and Pest stress factors (Expert System)
     #     Computed by expert_system based on environmental conditions.
     # ------------------------------------------------------------------
@@ -272,7 +289,6 @@ def step_day(
     #        fSolar = fSolarMax / (1 + exp(+0.01 * (TTc - (Tsum - I50B_dynamic))))
     # ------------------------------------------------------------------
     f_solar_max = crop_params['radiation']['f_solar_max']
-    t_sum       = crop_params['phenology']['t_sum']
 
     senescence_threshold = t_sum - crop_state.i_50b      # uses DYNAMIC I50B
 

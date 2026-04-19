@@ -1,65 +1,50 @@
 {
   "_DOCUMENTATION": {
-    "model": "SIMPLE Crop Model — soil water balance (Zhao et al., 2019)",
-    "parameter_source": "Table 1b of project document (page 18) provides site-specific values. Our three soil-type entries below are MAPPED from those site values to general soil classes for the Philippines context.",
+    "model": "SIMPLE Crop Model - soil water balance (Zhao et al., 2019)",
+    "parameter_source": "Table 1b of project document (page 18) provides crop-specific values used directly by the simulation.",
     "water_balance_equations": {
-      "scs_runoff":  "S = (25400/RCN) - 254; if rain > 0.2*S: Q = (rain-0.2*S)^2/(rain+0.8*S) else Q=0",
-      "eta":         "ETa = min(ETo, 0.096 * PAW)",
-      "arid":        "ARID = 1 - ETa/ETo",
-      "drainage":    "Drainage = DDC * PAW (fraction of current PAW drains each day)",
-      "paw_update":  "PAW(t+1) = PAW(t) + (rain - Q) - ETa - Drainage; clamped to [0, PAW_max]",
-      "paw_max":     "PAW_max = AWC * RZD (mm)"
+      "scs_runoff": "S = (25400/RCN) - 254; if rain > 0.2*S: Q = (rain-0.2*S)^2/(rain+0.8*S) else Q=0",
+      "eta": "ETa = min(ETo, 0.096 * PAW)",
+      "arid": "ARID = 1 - ETa/ETo",
+      "drainage": "Drainage = DDC * PAW (fraction of current PAW drains each day)",
+      "paw_update": "PAW(t+1) = PAW(t) + (rain - Q) - ETa - Drainage; clamped to [0, PAW_max]",
+      "paw_max": "PAW_max = AWC * RZD (mm)"
     },
     "units": {
-      "AWC": "m3/m3 — plant-available water capacity fraction = (theta_FC - theta_WP); e.g. 0.16 = 16% of soil volume",
-      "RCN": "dimensionless — SCS-CN2 Runoff Curve Number (higher = more runoff); typical range 60-90",
-      "DDC": "per day (0-1) — deep drainage coefficient: fraction of PAW that drains out per day",
-      "RZD": "mm — effective root zone depth for water balance"
+      "AWC": "m3/m3 - plant-available water capacity fraction = (theta_FC - theta_WP)",
+      "RCN": "dimensionless - SCS-CN2 Runoff Curve Number (higher = more runoff)",
+      "DDC": "per day (0-1) - deep drainage coefficient: fraction of PAW that drains out per day",
+      "RZD": "mm - effective root zone depth for water balance"
     },
     "table1b_reference_sites": {
       "tomato_gainesville": "AWC=0.19, RCN=85, DDC=0.10, RZD=800",
-      "sweetcorn_citra":    "AWC=0.25, RCN=60, DDC=0.70, RZD=1500",
-      "carrot_trzciana":    "AWC=0.09, RCN=75, DDC=0.40, RZD=500"
+      "sweetcorn_citra": "AWC=0.25, RCN=60, DDC=0.70, RZD=1500",
+      "carrot_trzciana": "AWC=0.09, RCN=75, DDC=0.40, RZD=500"
     },
-    "mapping_note": "Clay loam mapped from tomato-Gainesville site (higher AWC, higher RCN). Sandy loam mapped from sweetcorn-Citra site (high DDC, moderate RCN, shorter RZD). Loam is intermediate. All RZD values set to 500mm as a conservative uniform default; crop-specific depths can be added if needed."
+    "mapping_note": "Crop-specific profiles are used directly: sweet_corn, tomato, carrot."
   },
-
-  "clay_loam": {
-    "name": "Clay Loam",
+  "sweet_corn": {
+    "name": "Sweet Corn (Citra, USA)",
+    "AWC": 0.25,
+    "RCN": 60,
+    "DDC": 0.70,
+    "RZD": 1500,
+    "_source": "Table 1b reference values"
+  },
+  "tomato": {
+    "name": "Tomato (Gainesville, USA)",
     "AWC": 0.19,
-    "RCN": 80,
+    "RCN": 85,
     "DDC": 0.10,
-    "RZD": 500,
-    "_paw_max_note": "PAW_max = 0.19 × 500 = 95 mm of plant-available water",
-    "_source_AWC": "Mapped from tomato-Gainesville Table_1b (AWC=0.19); clay loam holds more water",
-    "_source_RCN": "Estimated — clay loam with moderate cover; Table_1b tomato site RCN=85 (poor cover); VERIFY",
-    "_source_DDC": "Mapped from tomato-Gainesville Table_1b (DDC=0.10); clay loam drains slowly",
-    "_source_RZD": "Estimated 500mm conservative default; Table_1b tomato site RZD=800mm; adjust if crop-specific depth known"
+    "RZD": 800,
+    "_source": "Table 1b reference values"
   },
-
-  "sandy_loam": {
-    "name": "Sandy Loam",
-    "AWC": 0.12,
-    "RCN": 65,
-    "DDC": 0.60,
+  "carrot": {
+    "name": "Carrot (Trzciana, Poland)",
+    "AWC": 0.09,
+    "RCN": 75,
+    "DDC": 0.40,
     "RZD": 500,
-    "_paw_max_note": "PAW_max = 0.12 × 500 = 60 mm of plant-available water",
-    "_source_AWC": "Estimated — sandy loam holds less water than clay loam; Table_1b sweetcorn AWC=0.25 is sandy soil but high-AWC site; VERIFY",
-    "_source_RCN": "Estimated — sandy loam with good cover has lower runoff; Table_1b sweetcorn site RCN=60; VERIFY",
-    "_source_DDC": "Estimated — sandy soils drain much faster than clay; Table_1b sweetcorn DDC=0.70; VERIFY",
-    "_source_RZD": "Estimated 500mm conservative default; VERIFY"
-  },
-
-  "loam": {
-    "name": "Loam",
-    "AWC": 0.17,
-    "RCN": 72,
-    "DDC": 0.35,
-    "RZD": 500,
-    "_paw_max_note": "PAW_max = 0.17 × 500 = 85 mm of plant-available water",
-    "_source_AWC": "Estimated — loam intermediate between clay loam and sandy loam; VERIFY against document p.18",
-    "_source_RCN": "Estimated — loam intermediate RCN; VERIFY",
-    "_source_DDC": "Estimated — loam intermediate drainage; VERIFY",
-    "_source_RZD": "Estimated 500mm conservative default; VERIFY"
+    "_source": "Table 1b reference values"
   }
 }

@@ -95,7 +95,6 @@ export default function ScenarioSetup() {
       location: selectedLocation,
       season: selectedSeason,
       planting_month: selectedMonth,
-      soil_type: 'clay_loam',
       initial_moisture: initialMoisture / 100,
       scenario: selectedScenario,
       co2_level: selectedCO2,

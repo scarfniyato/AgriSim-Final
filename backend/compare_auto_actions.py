@@ -13,7 +13,6 @@ DROUGHT_CONFIG = {
     'crop': 'sweet_corn',
     'location': 'tuguegarao_cagayan',
     'planting_month': 'june',
-    'soil_type': 'sandy_loam',
     'scenario': 'drought',
     'co2_level': 'medium',
     'fertilizer_level': 'recommended',
@@ -96,7 +95,7 @@ def print_comparison(result_baseline, result_auto, irrigation_schedule, pesticid
     print("=" * 80)
     print("DROUGHT SCENARIO COMPARISON")
     print("=" * 80)
-    print(f"\nCrop: Sweet Corn | Location: Tuguegarao | Soil: Sandy Loam")
+    print("\nCrop: Sweet Corn | Location: Tuguegarao | Soil: crop-specific profile (sweet_corn)")
     print(f"Planting Month: June | Initial Moisture: 70%\n")
     
     print("-" * 80)

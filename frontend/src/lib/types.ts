@@ -10,9 +10,6 @@ export type SeasonId = 'wet_season' | 'dry_season';
 // Month types
 export type MonthId = 'january' | 'february' | 'march' | 'april' | 'may' | 'june' | 'july' | 'august' | 'september' | 'october' | 'november' | 'december';
 
-// Soil type
-export type SoilTypeId = 'clay_loam' | 'sandy_loam' | 'loam';
-
 // Scenario types
 export type ScenarioId = 'baseline' | 'drought' | 'heat' | 'nutrient';
 
@@ -28,7 +25,6 @@ export interface SimulationConfig {
   location: LocationId;
   season: SeasonId;
   planting_month: MonthId;
-  soil_type: SoilTypeId;
   initial_moisture: number; // 0-1 range
   scenario: ScenarioId;
   co2_level: CO2LevelId;

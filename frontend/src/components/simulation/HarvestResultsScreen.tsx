@@ -10,6 +10,7 @@ import { BiomassAccumulationChart } from "./BiomassAccumulationChart";
 interface HarvestResultsScreenProps {
   simulationData: SimulationApiData;
   config: SimulationConfig;
+  irrigationSchedule?: Record<string, number>;
   onBack: () => void;
   onExport: () => void;
 }
@@ -23,7 +24,13 @@ function StatRow({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-export function HarvestResultsScreen({ simulationData, config, onBack, onExport }: HarvestResultsScreenProps) {
+export function HarvestResultsScreen({
+  simulationData,
+  config,
+  irrigationSchedule = {},
+  onBack,
+  onExport,
+}: HarvestResultsScreenProps) {
   const navigate = useNavigate();
   const hs = simulationData.harvest_summary;
 
@@ -36,6 +43,20 @@ export function HarvestResultsScreen({ simulationData, config, onBack, onExport 
       growth_stage: d.growth_stage,
     }));
   }, [simulationData]);
+
+  const totalIrrigationApplied = useMemo(() => {
+    const fromHarvestSummary = hs?.total_irrigation_mm ?? 0;
+    const fromDailyResults = simulationData?.daily_results?.reduce(
+      (sum, d) => sum + (d.irrigation_mm ?? 0),
+      0,
+    ) ?? 0;
+    const fromSchedule = Object.values(irrigationSchedule).reduce(
+      (sum, mm) => sum + (Number.isFinite(mm) ? mm : 0),
+      0,
+    );
+
+    return Math.max(fromHarvestSummary, fromDailyResults, fromSchedule);
+  }, [hs?.total_irrigation_mm, simulationData?.daily_results, irrigationSchedule]);
 
   if (!hs) return null;
 
@@ -131,7 +152,7 @@ export function HarvestResultsScreen({ simulationData, config, onBack, onExport 
             </CardHeader>
             <CardContent className="space-y-0">
               <StatRow label="Total Rainfall" value={`${hs.total_rainfall_mm.toFixed(1)} mm`} />
-              <StatRow label="Total Irrigation Applied" value={`${hs.total_irrigation_mm.toFixed(1)} mm`} />
+              <StatRow label="Total Irrigation Applied" value={`${totalIrrigationApplied.toFixed(1)} mm`} />
               <StatRow label="Average Solar Radiation" value={`${hs.avg_srad.toFixed(2)} MJ/m²/day`} />
               <StatRow label="Average Temperature" value={`${hs.avg_temperature.toFixed(1)} °C`} />
               <StatRow label="Average ARID" value={hs.avg_arid.toFixed(4)} />

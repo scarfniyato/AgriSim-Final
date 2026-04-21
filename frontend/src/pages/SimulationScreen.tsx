@@ -456,6 +456,7 @@ export default function SimulationScreen() {
       <HarvestResultsScreen
         simulationData={simulationData}
         config={config}
+        irrigationSchedule={irrigationSchedule}
         onBack={() => setShowHarvestResults(false)}
         onExport={handleExportResults}
       />

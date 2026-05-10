@@ -4,6 +4,7 @@ interface VisualEffectsProps {
   activeEffect: "water" | "fertilizer" | "pesticide" | null;
   pestLevel: number;
   day: number;
+  rainfall?: number;
 }
 
 // Corn-specific pests that appear
@@ -13,9 +14,18 @@ const PEST_TYPES = [
   { name: "Armyworm", emoji: "🐛" },
 ];
 
-export function VisualEffects({ activeEffect, pestLevel, day }: VisualEffectsProps) {
-  const [particles, setParticles] = useState<Array<{ id: number; x: number; y: number; delay: number }>>([]);
-  const [pests, setPests] = useState<Array<{ id: number; x: number; y: number; type: number; speed: number }>>([]);
+export function VisualEffects({
+  activeEffect,
+  pestLevel,
+  day,
+  rainfall = 0,
+}: VisualEffectsProps) {
+  const [particles, setParticles] = useState<
+    Array<{ id: number; x: number; y: number; delay: number }>
+  >([]);
+  const [pests, setPests] = useState<
+    Array<{ id: number; x: number; y: number; type: number; speed: number }>
+  >([]);
 
   // Generate particles when effect is active
   useEffect(() => {
@@ -83,6 +93,14 @@ export function VisualEffects({ activeEffect, pestLevel, day }: VisualEffectsPro
         </div>
       )}
 
+      {/* Rainfall Effect - overlay when rainfall > 0 */}
+      {rainfall > 0 && (
+        <div className="absolute inset-0 pointer-events-none z-20">
+          {/* Simple rain overlay, you can enhance this with animated drops if desired */}
+          <div className="absolute inset-0 bg-gradient-to-b from-blue-200/20 via-transparent to-transparent animate-pulse" />
+        </div>
+      )}
+
       {/* Fertilizer Effect - Green/brown particles rising */}
       {activeEffect === "fertilizer" && (
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -99,7 +117,10 @@ export function VisualEffects({ activeEffect, pestLevel, day }: VisualEffectsPro
               <div
                 className="w-2 h-2 rounded-full"
                 style={{
-                  backgroundColor: Math.random() > 0.5 ? "hsl(122, 39%, 45%)" : "hsl(25, 24%, 50%)",
+                  backgroundColor:
+                    Math.random() > 0.5
+                      ? "hsl(122, 39%, 45%)"
+                      : "hsl(25, 24%, 50%)",
                   opacity: 0.7,
                 }}
               />
@@ -123,9 +144,7 @@ export function VisualEffects({ activeEffect, pestLevel, day }: VisualEffectsPro
                 animationDelay: `${p.delay}s`,
               }}
             >
-              <div
-                className="w-3 h-3 rounded-full bg-agri-brown-300/60 blur-sm"
-              />
+              <div className="w-3 h-3 rounded-full bg-agri-brown-300/60 blur-sm" />
             </div>
           ))}
           {/* Mist overlay */}
@@ -145,7 +164,11 @@ export function VisualEffects({ activeEffect, pestLevel, day }: VisualEffectsPro
           }}
         >
           <div className="relative">
-            <span className="text-lg drop-shadow-md" role="img" aria-label={PEST_TYPES[pest.type].name}>
+            <span
+              className="text-lg drop-shadow-md"
+              role="img"
+              aria-label={PEST_TYPES[pest.type].name}
+            >
               {PEST_TYPES[pest.type].emoji}
             </span>
             {/* Damage indicator when pest level is high */}
@@ -160,7 +183,9 @@ export function VisualEffects({ activeEffect, pestLevel, day }: VisualEffectsPro
       {pestLevel > 60 && (
         <div className="absolute top-4 right-4 bg-stress-severe/90 text-white px-3 py-1.5 rounded-lg animate-pulse flex items-center gap-2 z-20">
           <span>🚨</span>
-          <span className="text-xs font-semibold">Pest Infestation Critical!</span>
+          <span className="text-xs font-semibold">
+            Pest Infestation Critical!
+          </span>
         </div>
       )}
     </>

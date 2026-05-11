@@ -28,7 +28,7 @@ const STAGE_COLORS: Record<string, string> = {
   emergence: "#6b7280",       // gray-500
   seedling: "#6b7280",        // gray-500
   vegetative: "#3b82f6",      // blue-500
-  flowering: "#f97316",       // orange-500
+  reproductive: "#f97316",    // orange-500
   grain_filling: "#f97316",   // orange-500
   fruit_set: "#f97316",       // orange-500
   root_bulking: "#f97316",    // orange-500
@@ -41,7 +41,7 @@ const STAGE_LABELS: Record<string, string> = {
   emergence: "Emergence",
   seedling: "Seedling",
   vegetative: "Vegetative",
-  flowering: "Flowering",
+  reproductive: "Reproductive",
   grain_filling: "Grain Filling",
   fruit_set: "Fruit Set",
   root_bulking: "Root Bulking",
@@ -128,7 +128,7 @@ export function BiomassAccumulationChart({ data }: BiomassAccumulationChartProps
     const stageItems = [
       { stage: "seedling", label: "Seedling" },
       { stage: "vegetative", label: "Vegetative" },
-      { stage: "flowering", label: "Flowering" },
+      { stage: "reproductive", label: "Reproductive" },
       { stage: "maturity", label: "Maturity" },
     ].filter(item => uniqueStages.includes(item.stage));
 

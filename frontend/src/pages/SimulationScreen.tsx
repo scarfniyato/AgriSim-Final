@@ -545,6 +545,7 @@ export default function SimulationScreen() {
         currentDay={currentDay}
         totalDays={totalDays}
         isRunning={isRunning}
+        plantingMonth={config?.planting_month}
         onPause={handlePause}
         onStop={handleStop}
       />

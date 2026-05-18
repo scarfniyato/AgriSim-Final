@@ -1,22 +1,49 @@
-import { Pause, Square, Play, Sprout, Plus } from "lucide-react";
+import { Pause, Square, Play, Sprout, Plus, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { MonthId } from "@/lib/types";
 
 interface SimulationHeaderProps {
   currentDay: number;
   totalDays: number;
   isRunning: boolean;
+  plantingMonth?: MonthId;
   onPause: () => void;
   onStop: () => void;
+}
+
+const MONTH_INDEX: Record<MonthId, number> = {
+  january: 0,
+  february: 1,
+  march: 2,
+  april: 3,
+  may: 4,
+  june: 5,
+  july: 6,
+  august: 7,
+  september: 8,
+  october: 9,
+  november: 10,
+  december: 11,
+};
+
+function formatSimDate(currentDay: number, plantingMonth?: MonthId): string | null {
+  if (!plantingMonth) return null;
+  // Fixed non-leap reference year keeps month-length math consistent (Feb = 28).
+  // Date auto-rolls over month boundaries (e.g. day 31 of June → July 1).
+  const date = new Date(2025, MONTH_INDEX[plantingMonth], currentDay);
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 export function SimulationHeader({
   currentDay,
   totalDays,
   isRunning,
+  plantingMonth,
   onPause,
   onStop,
 }: SimulationHeaderProps) {
   const navigate = useNavigate();
+  const simDate = formatSimDate(currentDay, plantingMonth);
 
   const handleNewSimulation = () => {
     navigate('/scenario-setup');
@@ -51,6 +78,17 @@ export function SimulationHeader({
             <span className="text-muted-foreground font-medium">/</span>
             <span className="text-muted-foreground font-medium">{totalDays}</span>
           </div>
+          {simDate && (
+            <>
+              <span className="w-px h-6 bg-border" />
+              <div className="flex items-center gap-1.5">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                <span className="font-poppins font-semibold text-base text-foreground">
+                  {simDate}
+                </span>
+              </div>
+            </>
+          )}
         </div>
         
         {/* Progress bar */}

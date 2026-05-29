@@ -95,6 +95,9 @@ def simulate():
     # --- Required field validation ---
     required = ['crop', 'location', 'planting_month',
                 'scenario', 'co2_level', 'fertilizer_level']
+    
+    #Checks which required fields are missing or empty
+    #Builds a list of missing field names
     missing = [f for f in required if not payload.get(f)]
     if missing:
         return jsonify({'error': f'Missing required fields: {missing}'}), 400
@@ -133,10 +136,18 @@ def simulate():
 
     # Irrigation schedule: {"day_number": mm_applied, ...}
     # Validated as dict of string keys → positive floats
+    #Replaces the raw input with the validated version
+    # Upper bound on schedule sizes. The simulation loop is hard-capped at
+    # 730 days (see integration.py), so a legitimate schedule can never exceed
+    # that. 1000 leaves headroom while blocking abusive oversized collections.
+    MAX_SCHEDULE_ENTRIES = 1000
+
     if 'irrigation_schedule' in payload:
         raw_sched = payload['irrigation_schedule']
         if not isinstance(raw_sched, dict):
             return jsonify({'error': 'irrigation_schedule must be an object mapping day numbers to mm values'}), 400
+        if len(raw_sched) > MAX_SCHEDULE_ENTRIES:
+            return jsonify({'error': f'irrigation_schedule too large (max {MAX_SCHEDULE_ENTRIES} entries)'}), 400
         validated = {}
         for k, v in raw_sched.items():
             try:
@@ -150,10 +161,13 @@ def simulate():
         payload['irrigation_schedule'] = validated
 
     # Pesticide schedule: [day1, day2, ...] — list of days when pesticide was applied
+    ##Replaces the raw input with the validated version
     if 'pesticide_schedule' in payload:
         raw_pest = payload['pesticide_schedule']
         if not isinstance(raw_pest, list):
             return jsonify({'error': 'pesticide_schedule must be an array of day numbers'}), 400
+        if len(raw_pest) > MAX_SCHEDULE_ENTRIES:
+            return jsonify({'error': f'pesticide_schedule too large (max {MAX_SCHEDULE_ENTRIES} entries)'}), 400
         validated_pest = []
         for day in raw_pest:
             try:
@@ -165,6 +179,7 @@ def simulate():
                 return jsonify({'error': f'pesticide_schedule has invalid entry: {day}'}), 400
         payload['pesticide_schedule'] = validated_pest
 
+    #Converts moisture into a number
     try:
         initial_moisture = float(payload['initial_moisture'])
         payload['initial_moisture'] = max(0.0, min(1.0, initial_moisture))

@@ -14,9 +14,6 @@ This module is the single entry point called by routes.py:
   from app.services.integration import run_simulation
   result = run_simulation(config)
 
-SUGGESTION: If simulation of user farm actions (irrigation, pesticide) is required
-in a future version, accept an 'actions' parameter here — a dict keyed by day number
-with action payloads — and apply them before each daily step.
 """
 
 import json
@@ -355,6 +352,7 @@ def run_simulation(config: Dict[str, Any]) -> SimulationOutput:
     if not maturity_reached and daily_results:
         t_sum = crop_params['phenology']['t_sum']
         final_ttc = round(crop_state.ttc, 1)
+        # computes how close the crop got to maturity
         pct = round((crop_state.ttc / t_sum) * 100, 1) if t_sum > 0 else 0
         warning_msg = (
             f"Crop did not reach maturity within {len(daily_results)} days. "
